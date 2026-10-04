@@ -1,0 +1,92 @@
+<section class="ajuste-nd">
+  <div class="ajuste-nd__campos">
+    <label>{{localize "T20AJND.NDAlvo"}}
+      <select name="nd">
+        {{#each nds}}<option value="{{valor}}" {{#if selecionado}}selected{{/if}}>{{valor}}</option>{{/each}}
+      </select>
+    </label>
+    <label>{{localize "T20AJND.Papel"}}
+      <select name="papel">
+        {{#each papeis}}<option value="{{valor}}" {{#if selecionado}}selected{{/if}}>{{rotulo}}</option>{{/each}}
+      </select>
+    </label>
+    <label class="ajuste-nd__copia">
+      <input type="checkbox" name="copiar" {{#if copiar}}checked{{/if}}>
+      {{localize "T20AJND.Copia"}}
+    </label>
+  </div>
+
+  <fieldset>
+    <legend>{{localize "T20AJND.Resistencias"}}</legend>
+    <div class="ajuste-nd__campos">
+      {{#each ordem}}
+      <label>{{rotulo}}
+        <select name="ordem-{{indice}}">
+          {{#each opcoes}}<option value="{{valor}}" {{#if selecionado}}selected{{/if}}>{{nome}}</option>{{/each}}
+        </select>
+      </label>
+      {{/each}}
+    </div>
+  </fieldset>
+
+  {{#if erro}}
+  <p class="ajuste-nd__erro">{{erro}}</p>
+  {{else}}
+  <table class="ajuste-nd__tabela">
+    <thead><tr><th>{{localize "T20AJND.Estatistica"}}</th><th>{{localize "T20AJND.Antes"}}</th><th>{{localize "T20AJND.Depois"}}</th></tr></thead>
+    <tbody>
+      {{#each linhas}}
+      <tr class="{{#if mudou}}mudou{{/if}}"><td>{{rotulo}}</td><td>{{antes}}</td><td>{{depois}}</td></tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+  <fieldset>
+    <legend>
+      {{localize "T20AJND.Armas"}} ({{localize "T20AJND.DanoAlvo"}}: {{danoAlvo}})
+      {{#if selo}}<span class="ajuste-nd__selo selo-{{selo.alerta}}">{{selo.texto}}</span>{{/if}}
+    </legend>
+    <table class="ajuste-nd__tabela">
+      <thead>
+        <tr>
+          <th>{{localize "T20AJND.Arma"}}</th>
+          <th>{{localize "T20AJND.Ataques"}}</th>
+          <th title="{{localize 'T20AJND.AlternativaDica'}}">{{localize "T20AJND.Alternativa"}}</th>
+          <th>{{localize "T20AJND.Antes"}}</th>
+          <th>{{localize "T20AJND.Depois"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each armas}}
+        <tr>
+          <td>{{nome}}</td>
+          <td><input type="number" min="0" max="9" value="{{ataques}}" data-ataques="{{id}}"></td>
+          <td><input type="checkbox" data-alternativa="{{id}}" {{#if alternativa}}checked{{/if}}></td>
+          <td>{{antes}}</td>
+          <td>{{#if depois}}{{depois}} <small>(≈ {{mediaDepois}})</small>{{else}}<em>{{localize "T20AJND.SemAlteracao"}}</em>{{/if}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </fieldset>
+
+  {{#if avisos.length}}
+  <div class="ajuste-nd__avisos">
+    <strong>{{localize "T20AJND.Avisos"}}</strong>
+    <ul>{{#each avisos}}<li>{{this}}</li>{{/each}}</ul>
+  </div>
+  {{/if}}
+
+  {{#if revisar.length}}
+  <div class="ajuste-nd__revisar">
+    <strong>{{localize "T20AJND.Revisar"}}</strong>
+    <ul>{{#each revisar}}<li>{{this}}</li>{{/each}}</ul>
+  </div>
+  {{/if}}
+  {{/if}}
+
+  <footer class="ajuste-nd__rodape">
+    <button type="button" data-action="aplicar" {{#if erro}}disabled{{/if}}><i class="fas fa-check"></i> {{localize "T20AJND.AplicarBotao"}}</button>
+    <button type="button" data-action="cancelar"><i class="fas fa-times"></i> {{localize "T20AJND.Cancelar"}}</button>
+  </footer>
+</section>

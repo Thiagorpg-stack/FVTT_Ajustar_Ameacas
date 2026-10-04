@@ -1,0 +1,156 @@
+// Diálogo "Ajustar ND": escolhe ND-alvo, papel e ataques por arma e mostra a prévia antes → depois.
+import { lerArmas, ordenarResistencias } from './calculo.js';
+import { mediaFormula } from './dano.js';
+import { aplicarAjuste, criarMedidor, simular, ID_MODULO } from './aplicar.js';
+
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+const NDS = ['1/4', '1/2', ...Array.from({ length: 20 }, (_, i) => String(i + 1)), 'S', 'S+'];
+const PAPEIS = [['solo', 'Solo'], ['lackey', 'Lacaio'], ['special', 'Especial']];
+const TESTES = { fort: 'Fortitude', refl: 'Reflexos', vont: 'Vontade' };
+const PERICIAS_ATAQUE = { luta: 'Luta', pont: 'Pontaria' };
+const SELOS = { equilibrado: 'Equilibrado', alto: 'Alto', baixo: 'Baixo' };
+
+export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
+  static DEFAULT_OPTIONS = {
+    classes: ['t20-ajuste-nd'],
+    position: { width: 680, height: 'auto' },
+    window: { resizable: true, icon: 'fas fa-scale-balanced' },
+    actions: { aplicar: DialogoAjusteND.#aplicar, cancelar: DialogoAjusteND.#cancelar },
+  };
+
+  static PARTS = { corpo: { template: `modules/${ID_MODULO}/templates/dialogo.hbs` } };
+
+  constructor(actor, options = {}) {
+    super({ id: `${ID_MODULO}-${actor.id}`, ...options });
+    this.actor = actor;
+    this.resultado = null;
+
+    const dados = actor.toObject();
+    const armas = lerArmas(dados.items, dados.system.detalhes.ataquescac ?? '');
+    const nd = String(dados.system.attributes.nd).trim();
+    const papel = dados.system.detalhes.role;
+    this.estado = {
+      nd: NDS.includes(nd) ? nd : '1',
+      papel: PAPEIS.some(([chave]) => chave === papel) ? papel : 'solo',
+      copiar: true,
+      ataques: Object.fromEntries(armas.map(a => [a.id, a.ataques])),
+      alternativas: {},
+      ordem: ordenarResistencias(criarMedidor(actor)().pericias),
+      ordemInvalida: false,
+    };
+  }
+
+  get title() {
+    return `${game.i18n.localize('T20AJND.Titulo')}: ${this.actor.name}`;
+  }
+
+  async _prepareContext() {
+    const e = this.estado;
+    const contexto = {
+      nds: NDS.map(v => ({ valor: v, selecionado: v === e.nd })),
+      papeis: PAPEIS.map(([valor, rotulo]) => ({ valor, rotulo, selecionado: valor === e.papel })),
+      copiar: e.copiar,
+      erro: null, linhas: [], armas: [], avisos: [], revisar: [], selo: null, ordem: [],
+    };
+    contexto.ordem = ['Forte', 'Média', 'Fraca'].map((rotulo, i) => ({
+      indice: i, rotulo,
+      opcoes: Object.entries(TESTES).map(([valor, nome]) => ({ valor, nome, selecionado: valor === e.ordem[i] })),
+    }));
+
+    if (e.ordemInvalida) {
+      contexto.erro = 'Cada teste de resistência deve aparecer uma única vez em Forte, Média e Fraca.';
+      this.resultado = null;
+      return contexto;
+    }
+
+    try {
+      this.resultado = await simular(this.actor, {
+        nd: e.nd, papel: e.papel, ataquesPorArma: e.ataques,
+        alternativas: e.alternativas, ordemResistencias: e.ordem,
+      });
+    } catch (erro) {
+      console.error(`${ID_MODULO} |`, erro);
+      this.resultado = null;
+      contexto.erro = erro.message;
+      return contexto;
+    }
+    return Object.assign(contexto, this.#montarPrevia(this.resultado));
+  }
+
+  #montarPrevia(r) {
+    const dados = this.actor.toObject();
+    const sys = dados.system;
+    const linha = (rotulo, antes, depois) => ({ rotulo, antes, depois, mudou: antes !== depois });
+
+    const armas = lerArmas(dados.items, sys.detalhes.ataquescac ?? '');
+    const usadas = [...new Set(armas.map(a => a.pericia))];
+    const linhas = [
+      linha('PV', sys.attributes.pv.max, r.update['system.attributes.pv.max']),
+      linha('CD', sys.attributes.cd, r.update['system.attributes.cd']),
+      linha('Defesa (total na ficha)', r.antes.defesa, r.depois.defesa),
+      ...usadas.map(k => linha(`Ataque (${PERICIAS_ATAQUE[k] ?? k})`, r.antes.pericias[k], r.depois.pericias[k])),
+      ...Object.entries(TESTES).map(([k, nome]) => linha(nome, r.antes.pericias[k], r.depois.pericias[k])),
+    ];
+
+    const linhasArmas = armas.map((arma) => {
+      const item = dados.items.find(i => i._id === arma.id);
+      const ataques = this.estado.ataques[arma.id] ?? arma.ataques;
+      const antes = item.system.rolls[arma.indiceRollDano].parts[0][0];
+      const novo = r.itemUpdates.find(u => u._id === arma.id)['system.rolls'][arma.indiceRollDano].parts[0][0];
+      const depois = ataques > 0 ? novo : null;
+      return {
+        id: arma.id, nome: arma.nome, ataques,
+        alternativa: !!this.estado.alternativas[arma.id],
+        antes, depois,
+        mediaDepois: depois && mediaFormula(depois) !== null ? mediaFormula(depois) : null,
+      };
+    });
+
+    const grupos = r.plano.dano?.grupos ?? [];
+    const pior = grupos.find(g => g.alerta !== 'equilibrado') ?? grupos[0];
+    return {
+      linhas, armas: linhasArmas, avisos: r.avisos, revisar: r.plano.revisar,
+      danoAlvo: r.plano.linha.Dano,
+      selo: pior ? { alerta: pior.alerta, texto: SELOS[pior.alerta] } : null,
+    };
+  }
+
+  _onRender() {
+    const el = this.element;
+    el.querySelectorAll('input, select').forEach(campo =>
+      campo.addEventListener('change', () => this.#aoMudar()));
+  }
+
+  async #aoMudar() {
+    const el = this.element;
+    const e = this.estado;
+    e.nd = el.querySelector('[name=nd]').value;
+    e.papel = el.querySelector('[name=papel]').value;
+    e.copiar = el.querySelector('[name=copiar]').checked;
+    el.querySelectorAll('[data-ataques]').forEach((c) => {
+      e.ataques[c.dataset.ataques] = Math.max(0, parseInt(c.value, 10) || 0);
+    });
+    el.querySelectorAll('[data-alternativa]').forEach((c) => {
+      e.alternativas[c.dataset.alternativa] = c.checked;
+    });
+    e.ordem = [0, 1, 2].map(i => el.querySelector(`[name=ordem-${i}]`).value);
+    e.ordemInvalida = new Set(e.ordem).size !== 3;
+    await this.render();
+  }
+
+  static async #aplicar() {
+    if (!this.resultado) return;
+    const novo = await aplicarAjuste(this.actor, this.resultado, { copiar: this.estado.copiar });
+    ui.notifications.info(game.i18n.format('T20AJND.Aplicado', { nome: novo.name }));
+    await this.close();
+  }
+
+  static async #cancelar() {
+    await this.close();
+  }
+}
+
+export function abrirAjusteND(actor) {
+  return new DialogoAjusteND(actor).render({ force: true });
+}

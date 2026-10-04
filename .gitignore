@@ -1,0 +1,3 @@
+node_modules/
+# Fichas exportadas do compendium do Tormenta20 (texto com direitos autorais): ficam só na sua máquina.
+tests/fixtures/*.json

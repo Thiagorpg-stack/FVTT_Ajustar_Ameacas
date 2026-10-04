@@ -1,0 +1,23 @@
+{
+  "T20AJND.Titulo": "Ajustar ND",
+  "T20AJND.Botao": "Ajustar ND",
+  "T20AJND.NDAlvo": "ND-alvo",
+  "T20AJND.Papel": "Papel",
+  "T20AJND.Copia": "Criar uma cópia (o original não muda)",
+  "T20AJND.Resistencias": "Resistências",
+  "T20AJND.Estatistica": "Estatística",
+  "T20AJND.Antes": "Antes",
+  "T20AJND.Depois": "Depois",
+  "T20AJND.Armas": "Armas",
+  "T20AJND.DanoAlvo": "dano por rodada da tabela",
+  "T20AJND.Arma": "Arma",
+  "T20AJND.Ataques": "Ataques por rodada",
+  "T20AJND.Alternativa": "Alternativa",
+  "T20AJND.AlternativaDica": "A criatura usa esta arma OU as outras. Ela é balanceada sozinha contra o dano total da tabela.",
+  "T20AJND.SemAlteracao": "sem alteração (0 ataques)",
+  "T20AJND.Avisos": "Avisos",
+  "T20AJND.Revisar": "Revisar (poderes e magias com dano, não alterados)",
+  "T20AJND.AplicarBotao": "Aplicar",
+  "T20AJND.Cancelar": "Cancelar",
+  "T20AJND.Aplicado": "Ajuste aplicado: {nome}"
+}
