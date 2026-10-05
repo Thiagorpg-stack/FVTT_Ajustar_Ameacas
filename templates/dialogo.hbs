@@ -25,6 +25,10 @@
       {{localize "T20AJND.AtualizarCDs"}}
     </label>
     <label class="ajuste-nd__copia">
+      <input type="checkbox" name="atualizarNivelConjurador" {{#if atualizarNivelConjurador}}checked{{/if}}>
+      {{localize "T20AJND.AtualizarNivelConjurador"}}
+    </label>
+    <label class="ajuste-nd__copia">
       <input type="checkbox" name="atualizarTextoAtaques" {{#if atualizarTextoAtaques}}checked{{/if}}>
       {{localize "T20AJND.AtualizarAtaques"}}
     </label>
@@ -92,6 +96,7 @@
     <strong>{{localize "T20AJND.TextosAlterados"}}</strong>
     <ul>
       {{#each textos.cds}}<li>{{this}}</li>{{/each}}
+      {{#each textos.conjurador}}<li>{{this}}</li>{{/each}}
       {{#each textos.ataques}}<li>{{rotulo}}: {{antes}} → <em>{{depois}}</em></li>{{/each}}
     </ul>
   </div>
@@ -101,6 +106,13 @@
   <div class="ajuste-nd__avisos">
     <strong>{{localize "T20AJND.Avisos"}}</strong>
     <ul>{{#each avisos}}<li>{{this}}</li>{{/each}}</ul>
+  </div>
+  {{/if}}
+
+  {{#if sugestoes.length}}
+  <div class="ajuste-nd__sugestoes">
+    <strong>{{localize "T20AJND.Sugestoes"}}</strong>
+    <ul>{{#each sugestoes}}<li>{{this}}</li>{{/each}}</ul>
   </div>
   {{/if}}
 

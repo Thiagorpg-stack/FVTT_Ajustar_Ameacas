@@ -20,6 +20,20 @@ export function atualizarCDs(texto, cd) {
   return { texto: novo, antigas };
 }
 
+// Troca o nível em "lança magias como um clérigo de 10º nível" ("um/uma" e a classe ficam como estão).
+// Devolve cada trecho achado como { classe, de, para }; só esse padrão é tocado.
+export function atualizarNivelConjurador(texto, nivel) {
+  if (!texto) return { texto: '', trocas: [] };
+  const trocas = [];
+  const novo = texto.replace(
+    /(magias\s+como\s+(?:um|uma)\s+)([\p{L}-]+)(\s+de\s+)(\d+)(º\s*n[ií]vel)/giu,
+    (_, inicio, classe, de, antigo, fim) => {
+      trocas.push({ classe, de: Number(antigo), para: nivel });
+      return `${inicio}${classe}${de}${nivel}${fim}`;
+    });
+  return { texto: novo, trocas };
+}
+
 // Atualiza o bônus de ataque e a fórmula de dano de cada arma citada no texto
 // ("Bordão +11 (1d8+4)" → "Bordão +22 (3d6+21)"). Dano secundário, crítico, quantidades e o resto
 // do texto ficam como estão. Arma que não aparece no texto não muda nada.

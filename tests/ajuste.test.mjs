@@ -125,12 +125,12 @@ for (const nome of nomesDasFichas()) {
   }
 }
 
-test('textos: Centauro Xamã → ND 7 Especial troca a CD escrita no poder Magias e nada mais nele', () => {
+test('textos: Centauro Xamã → ND 7 Especial troca a CD e o nível de conjurador escritos no poder Magias e nada mais nele', () => {
   const c = ficha('centauro');
   const r = ajustar(c, '7', 'special');
   const magias = r.itemUpdates.find(u => u._id === 'xL83OWwOqqw80wzl');
   assert.equal(magias['system.description.value'],
-    'O centauro xamã lança magias como um clérigo de 3º nível (CD 26)');
+    'O centauro xamã lança magias como um clérigo de 7º nível (CD 26)');
   assert.deepEqual(Object.keys(magias).sort(), ['_id', 'system.description.value']);
   assert.deepEqual(r.textos.cds, [{ nome: 'Magias', antigas: [17], para: 26 }]);
   assert.equal(r.itemUpdates.some(u => u._id === 'IseSV7ZmgqkbCKMx'), false); // Medo de Altura não tem CD
@@ -166,9 +166,9 @@ test('textos: CD dentro da descrição da arma e dentro da linha de ataques (Apa
   assert.match(r.update['system.detalhes.ataquescac'], /Fortitude \(CD 20\)\. Se falhar/);
 });
 
-test('textos: dá para desligar a troca de CD e a de linhas de ataque', () => {
+test('textos: dá para desligar a troca de CD, a de nível de conjurador e a de linhas de ataque', () => {
   const c = ficha('centauro');
-  const semCD = ajustar(c, '7', 'special', { atualizarCDs: false });
+  const semCD = ajustar(c, '7', 'special', { atualizarCDs: false, atualizarNivelConjurador: false });
   assert.equal(semCD.itemUpdates.some(u => 'system.description.value' in u), false);
   assert.deepEqual(semCD.textos.cds, []);
   const semAtaques = ajustar(c, '7', 'special', { atualizarTextoAtaques: false });

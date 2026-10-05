@@ -2,7 +2,11 @@
 // mostra (o clone preparado, no Foundry) entra como a função `medir`.
 import { lerArmas, planejarAjuste } from './calculo.js';
 import { normalizarND } from './tabelas.js';
-import { atualizarCDs as trocarCDs, atualizarTextoAtaques as trocarTextoAtaques } from './textos.js';
+import {
+  atualizarCDs as trocarCDs, atualizarTextoAtaques as trocarTextoAtaques,
+  atualizarNivelConjurador as trocarNivelConjurador,
+} from './textos.js';
+import { nivelDoND, sugerirCirculos } from './circulos.js';
 
 const NUMERO = /^[+-]?\d+(\.\d+)?$/;
 const TIPOS_COM_CD = ['poder', 'magia', 'arma'];
@@ -46,7 +50,7 @@ function calibrar({ dados, update, alvosPericias, alvoDefesa, medir }) {
 export function calcularAjuste({
   dados, tabelas, nd, papel, medir,
   ataquesPorArma = {}, alternativas = {}, ordemResistencias,
-  atualizarCDs = true, atualizarTextoAtaques = true, manterProporcao = true,
+  atualizarCDs = true, atualizarTextoAtaques = true, atualizarNivelConjurador = true, manterProporcao = true,
 }) {
   const antes = medir({});
   const armas = lerArmas(dados.items, dados.system.detalhes.ataquescac ?? '');
@@ -86,15 +90,35 @@ export function calcularAjuste({
     };
   });
 
-  const textos = { cds: [], ataques: [] };
+  const textos = { cds: [], ataques: [], conjurador: [] };
+  const nivelConjurador = nivelDoND(nd);
+  const sugestoes = [];
 
-  // Troca só o número da CD escrita nas descrições (poderes, magias e armas); o resto do texto fica igual.
-  if (atualizarCDs) {
+  // Troca só o número da CD e o nível de conjurador escritos nas descrições (poderes, magias e armas);
+  // o resto do texto fica igual. Cada item recebe uma única gravação da descrição.
+  if (atualizarCDs || atualizarNivelConjurador) {
+    const classesVistas = new Set();
+    const maiorCirculoNaFicha = Math.max(0, ...dados.items
+      .filter(i => i.type === 'magia').map(i => Number(i.system.circulo) || 0));
     for (const item of dados.items.filter(i => TIPOS_COM_CD.includes(i.type))) {
       const original = item.system.description?.value;
-      const { texto, antigas } = trocarCDs(original, alvos.cd);
+      let texto = original;
+      if (atualizarNivelConjurador) {
+        const nivel = trocarNivelConjurador(texto, nivelConjurador);
+        texto = nivel.texto;
+        for (const { classe, de, para } of nivel.trocas) {
+          if (de !== para) textos.conjurador.push({ nome: item.name, classe, de, para });
+          if (classesVistas.has(classe.toLowerCase())) continue;
+          classesVistas.add(classe.toLowerCase());
+          sugestoes.push(...sugerirCirculos({ classe, nivel: para, maiorCirculoNaFicha }));
+        }
+      }
+      if (atualizarCDs) {
+        const cd = trocarCDs(texto, alvos.cd);
+        if (cd.texto !== texto) textos.cds.push({ nome: item.name, antigas: cd.antigas, para: alvos.cd });
+        texto = cd.texto;
+      }
       if (texto === original) continue;
-      textos.cds.push({ nome: item.name, antigas, para: alvos.cd });
       let mudanca = itemUpdates.find(u => u._id === item._id);
       if (!mudanca) itemUpdates.push(mudanca = { _id: item._id });
       mudanca['system.description.value'] = texto;
@@ -119,5 +143,5 @@ export function calcularAjuste({
     }
   }
 
-  return { plano, update, itemUpdates, antes, depois, avisos, textos };
+  return { plano, update, itemUpdates, antes, depois, avisos, textos, sugestoes };
 }
