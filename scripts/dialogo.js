@@ -204,8 +204,9 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     } else {
       e.bandoAumento = Math.max(0, parseInt(el.querySelector('[name=bandoAumento]').value, 10) || 0);
     }
-    el.querySelectorAll('[data-ataques]').forEach((c) => {
-      e.ataques[c.dataset.ataques] = Math.max(0, parseInt(c.value, 10) || 0);
+    // Com o Enxame sozinho os campos ficam desabilitados e mostram 0; esse 0 é só visual e não pode virar o valor da arma.
+    el.querySelectorAll('[data-ataques]:not(:disabled)').forEach((c) => {
+      e.ataques[c.dataset.ataques] =Math.max(0, parseInt(c.value, 10) || 0);
     });
     el.querySelectorAll('[data-alternativa]').forEach((c) => {
       e.alternativas[c.dataset.alternativa] = c.checked;

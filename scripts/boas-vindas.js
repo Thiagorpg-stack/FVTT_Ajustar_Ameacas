@@ -9,6 +9,7 @@ export const NOVIDADES = {
   '0.7.0': ['T20AJND.Novidade070Enxame', 'T20AJND.Novidade070Nome'],
   '0.8.0': ['T20AJND.Novidade080Bando', 'T20AJND.Novidade080Enxame'],
   '0.8.1': ['T20AJND.Novidade081Juntos', 'T20AJND.Novidade081Correcoes'],
+  '0.8.2': ['T20AJND.Novidade082Dano', 'T20AJND.Novidade082Enxame'],
 };
 
 const versaoComoNumeros = (versao) => String(versao ?? '').split('.').map(n => parseInt(n, 10) || 0);

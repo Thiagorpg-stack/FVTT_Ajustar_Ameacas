@@ -2,6 +2,7 @@
 // mostra (o clone preparado, no Foundry) entra como a função `medir`.
 import { lerArmas, planejarAjuste, totalAtaques, AVISO_SEM_ARMAS } from './calculo.js';
 import { normalizarND } from './tabelas.js';
+import { ehCura, mediaFormula } from './dano.js';
 import {
   atualizarCDs as trocarCDs, atualizarTextoAtaques as trocarTextoAtaques,
   atualizarNivelConjurador as trocarNivelConjurador,
@@ -18,14 +19,26 @@ const CAMPOS_DE_ATAQUE = ['ataquescac', 'ataquesad'];
 
 // Zera os termos numéricos do ataque (o bônus todo passa a vir da perícia) e escreve a fórmula de
 // dano na rolagem principal. Não altera o array recebido. Sem `formula`, só mexe no ataque.
-export function reescreverRolls(rolls, { indiceRollDano, formula }) {
+// Com `multiplicador` (Bando), as demais linhas de dano do golpe (ácido, fogo...) também viram
+// "(fórmula) * N": o golpe inteiro é multiplicado, não só a rolagem principal.
+export function reescreverRolls(rolls, { indiceRollDano, formula, multiplicador = 1 }) {
   const novas = structuredClone(rolls);
   for (const roll of novas.filter(r => r.type === 'ataque')) {
     roll.parts.slice(2).forEach((parte) => {
       if (NUMERO.test(String(parte[0]).trim())) parte[0] = '0';
     });
   }
-  if (formula !== undefined) novas[indiceRollDano].parts[0][0] = formula;
+  if (formula === undefined) return novas;
+  novas[indiceRollDano].parts[0][0] = formula;
+  if (multiplicador > 1) {
+    novas.forEach((roll, i) => {
+      if (roll.type !== 'dano' || ehCura(roll)) return;
+      roll.parts.forEach((parte, j) => {
+        if (i === indiceRollDano && j === 0) return;
+        if (mediaFormula(parte[0]) !== null) parte[0] = `(${parte[0]}) * ${multiplicador}`;
+      });
+    });
+  }
   return novas;
 }
 
@@ -110,7 +123,9 @@ export function calcularAjuste({
     return {
       _id: arma.id,
       'system.ataques': ataques,
-      'system.rolls': reescreverRolls(item.system.rolls, { indiceRollDano: arma.indiceRollDano, formula: formulaFinal }),
+      'system.rolls': reescreverRolls(item.system.rolls, {
+        indiceRollDano: arma.indiceRollDano, formula: formulaFinal, multiplicador: mult,
+      }),
     };
   });
 
@@ -157,6 +172,7 @@ export function calcularAjuste({
       formula: (ataquesPorArma[arma.id] ?? arma.ataques) > 0
         ? [plano.dano?.porArma[arma.id]?.formula, mult > 1 ? ` ×${mult}` : ''].join('')
         : undefined,
+      multiplicador: mult,
     }));
     for (const campo of CAMPOS_DE_ATAQUE) {
       const antesTexto = dados.system.detalhes[campo];

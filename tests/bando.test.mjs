@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { calcularAjuste } from '../scripts/ajuste.js';
 import { consultar } from '../scripts/tabelas.js';
+import { mediaFormula } from '../scripts/dano.js';
 import { resolverBando, aumentoPadrao } from '../scripts/templates.js';
 import { ficha, criarMedidor, gravarResultado } from './helpers.mjs';
 
@@ -124,7 +125,38 @@ test('desmarcar o Bando devolve ND, tamanho, fórmulas, imunidades e remove os p
 test('as linhas de ataque do texto mostram o multiplicador do bando', () => {
   const f = ficha('sacerdote'); // Veterano → Campeão: ×2; o Anão não tem linha de ataque escrita
   const r = ajustar(f, '10', bando('50-70', 4));
-  assert.match(r.update['system.detalhes.ataquescac'], /\(\d+d6\+\d+ ×2 mais 1d6 de ácido\)/);
+  assert.match(r.update['system.detalhes.ataquescac'], /\(\d+d6\+\d+ ×2 mais 1d6 ×2 de ácido\)/);
+});
+
+// Dano médio por rodada como a ficha gravada o entrega: cada linha de dano (principal e extras) com o "* N" que tiver.
+const mediaDaLinha = (texto) => {
+  const m = /^\((.+)\) \* (\d+)$/.exec(texto);
+  return m ? mediaFormula(m[1]) * Number(m[2]) : (mediaFormula(texto) ?? 0);
+};
+const danoPorRodada = (f) => armas(f).reduce((soma, a) => soma + a.system.ataques * a.system.rolls
+  .filter(r => r.type === 'dano').flatMap(r => r.parts).reduce((s, p) => s + mediaDaLinha(p[0]), 0), 0);
+
+test('Bando: o dano extra do golpe (ácido) também é multiplicado e o dano da rodada bate com a tabela', () => {
+  const f = ficha('sacerdote'); // Corrente: corte + 1d6 de ácido; Veterano → Campeão: ×2
+  const r = ajustar(f, '10', bando('10-20', 2));
+  const nova = gravarResultado(f, r);
+  const corrente = armas(nova).find(a => a.name.startsWith('Corrente'));
+  const danos = corrente.system.rolls.find(x => x.type === 'dano').parts.map(p => p[0]);
+  assert.match(danos[0], /^\(.+\) \* 2$/);
+  assert.equal(danos[1], '');
+  assert.equal(danos[2], '(1d6) * 2');
+  const alvo = r.plano.linha.Dano;
+  assert.ok(Math.abs(danoPorRodada(nova) - alvo) / alvo < 0.03, `${danoPorRodada(nova)} vs ${alvo}`);
+});
+
+test('Bando: o dano extra não é multiplicado de novo ao reaplicar e volta ao original ao desmarcar', () => {
+  const f = ficha('sacerdote');
+  const gravada = gravarResultado(f, ajustar(f, '10', bando('10-20', 2)));
+  const reaplicada = gravarResultado(gravada, ajustar(gravada, '10', bando('10-20', 2)));
+  const extra = (x) => armas(x).find(a => a.name.startsWith('Corrente')).system.rolls.find(r => r.type === 'dano').parts[2][0];
+  assert.equal(extra(reaplicada), '(1d6) * 2');
+  const desmarcada = gravarResultado(reaplicada, ajustar(reaplicada, '10', {}));
+  assert.equal(extra(desmarcada), extra(f));
 });
 
 test('Bando com Chefe Final: PV ×2 sobre o ND efetivo, PM e RD pelo ND efetivo', () => {
@@ -177,7 +209,7 @@ test('desmarcar o Bando tira o "×N" das linhas de ataque; reaplicar não acumul
   const gravada = gravarResultado(f, ajustar(f, '10', bando('50-70', 4), { gerarId: ids }));
   assert.match(gravada.system.detalhes.ataquescac, /×2/);
   const reaplicada = gravarResultado(gravada, ajustar(gravada, '10', bando('50-70', 4), { gerarId: ids }));
-  assert.equal((reaplicada.system.detalhes.ataquescac.match(/×2/g) ?? []).length, 2); // um por arma citada
+  assert.equal((reaplicada.system.detalhes.ataquescac.match(/×2/g) ?? []).length, 3); // um por arma citada e um no ácido
   assert.doesNotMatch(reaplicada.system.detalhes.ataquescac, /×2 ×2/);
   const desmarcada = gravarResultado(gravada, ajustar(gravada, '10', {}));
   assert.equal(desmarcada.system.detalhes.ataquescac, normal.system.detalhes.ataquescac);
@@ -188,4 +220,9 @@ test('desmarcar o Bando devolve a linha de ataque original mesmo com a atualiza�
   const gravada = gravarResultado(f, ajustar(f, '10', bando('50-70', 4), { gerarId: ids }));
   const desmarcada = gravarResultado(gravada, ajustar(gravada, '10', {}, { atualizarTextoAtaques: false }));
   assert.equal(desmarcada.system.detalhes.ataquescac, f.system.detalhes.ataquescac);
+});
+
+test('Bando que muda de patamar: a prévia avisa "Veterano → Campeão" na primeira aplicação', () => {
+  const r = ajustar(ficha('sacerdote'), '10', bando('10-20', 2));
+  assert.ok(r.patamar.includes('Patamar: Veterano → Campeão.'), r.patamar.join(' | '));
 });

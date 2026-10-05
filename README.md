@@ -36,7 +36,7 @@ Marque na prévia; os três podem ser combinados. Cada template marcado grava um
 | Template | O que faz |
 |---|---|
 | Chefe Final | PV ×2; PM + 2×ND (só quem já tem PM); RD mínima por patamar (Veterano 5, Campeão 10, Lenda 20, gravada em `tracos.resistencias.dano.base` e no texto de resistências); poder **Maior que a Morte**. XP de ND + 2 (nota na prévia). |
-| Bando | O grupo é tratado como uma criatura de **ND maior**: o ND efetivo sobe pelo aumento da escala de indivíduos (10-20 e 20-40: +2; 50-70: +4; 80-100: +6; editável) e PV, ataque, defesa, CD e resistências vêm da linha desse ND (a ficha mostra o ND do bando; o ND de destino do diálogo é o da criatura individual). O tamanho sobe 1, 2, 3 ou 4 categorias conforme a escala (até Colossal). O dano dos golpes é multiplicado (×2, ×4 ou ×6, conforme os patamares que o ND subiu) e escrito como `(fórmula) * N`; cada golpe é balanceado contra o dano da tabela dividido pelo multiplicador. Cria os poderes Dano Esmagador, Dano Inescapável e Ataques Adicionais contra o Bando e acrescenta as imunidades (texto e `tracos.ic.custom`). |
+| Bando | O grupo é tratado como uma criatura de **ND maior**: o ND efetivo sobe pelo aumento da escala de indivíduos (10-20 e 20-40: +2; 50-70: +4; 80-100: +6; editável) e PV, ataque, defesa, CD e resistências vêm da linha desse ND (a ficha mostra o ND do bando; o ND de destino do diálogo é o da criatura individual). O tamanho sobe 1, 2, 3 ou 4 categorias conforme a escala (até Colossal). O dano dos golpes é multiplicado (×2, ×4 ou ×6, conforme os patamares que o ND subiu) e escrito como `(fórmula) * N`, inclusive nas linhas extras do golpe (como o ácido da Corrente de espinhos); cada golpe é balanceado contra o dano da tabela dividido pelo multiplicador. Cria os poderes Dano Esmagador, Dano Inescapável e Ataques Adicionais contra o Bando e acrescenta as imunidades (texto e `tracos.ic.custom`). |
 | Enxame | Sozinho, remove as armas da ficha (a aba Estatísticas lista toda arma, mesmo com 0 ataques; o módulo guarda as armas inteiras e as recria, com o dano recalculado, ao desmarcar); cria o poder **Enxame** (dano automático com a média do dano do ND) e os poderes Movimentação Tática, Resistência a Armas, Vulnerabilidade a Área e Interações Mágicas; esvazia a linha de Corpo a Corpo (o poder Enxame já descreve o ataque). **Junto com o Bando, as armas e os ataques ficam na ficha** e o Bando segue ajustando o dano delas; acrescenta as imunidades ao texto de resistências e a `tracos.ic.custom`. |
 
 ## Mensagem no chat
@@ -48,6 +48,12 @@ A prévia é calculada num clone da ficha; o **Aplicar** grava uma vez. Por padr
 ## Compatibilidade
 
 Foundry VTT v13 (testado com 13.351) e sistema Tormenta20 1.5.x.
+
+## Licença e aviso legal
+
+O código deste módulo é distribuído sob a [licença MIT](LICENSE).
+
+Este é um projeto de fã, não oficial. Tormenta20 e seus elementos pertencem à Jambô Editora; o módulo não é afiliado, apoiado nem aprovado por ela. O módulo não inclui texto de livros nem conteúdo de compêndios: usa apenas números de regra (tabela de parâmetros de ameaças) para calcular os ajustes.
 
 ## Instalação manual
 

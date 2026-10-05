@@ -54,6 +54,8 @@
   "T20AJND.Novidade040Conjurador": "Nível de conjurador nos textos: \"lança magias como um clérigo de 10º nível\" passa a usar o ND de destino como nível, mantendo a classe.",
   "T20AJND.Novidade040Circulos": "A prévia sugere círculos de magia liberados (ou acima do permitido) pelo novo nível. Nada é adicionado à ficha.",
   "T20AJND.Novidade040Boasvindas": "Esta mensagem de boas-vindas e de novidades, enviada só ao Mestre.",
+  "T20AJND.Novidade082Dano": "Bando: o dano extra do golpe (como o ácido da Corrente de espinhos) agora também é multiplicado, e o dano por rodada bate com a tabela do ND do bando. A linha de ataque do texto mostra o ×N também nesse dano extra.",
+  "T20AJND.Novidade082Enxame": "Correção: marcar o Enxame e depois o Bando no mesmo diálogo zerava os ataques das armas (e o dano delas ficava sem ajuste).",
   "T20AJND.Novidade081Juntos": "Bando e Enxame marcados juntos: as armas e os ataques ficam na ficha (o Enxame só remove as armas quando está sozinho) e o Bando segue ajustando o dano delas.",
   "T20AJND.Novidade081Correcoes": "Correções: o \"×N\" do Bando saía das linhas de ataque ao desmarcar o Bando e se acumulava ao reaplicar; e \"Manobras de combate\" aparecia duas vezes nas imunidades quando Bando e Enxame eram combinados.",
   "T20AJND.Novidade080Enxame": "Enxame: as armas agora saem da ficha, para não aparecerem nas estatísticas, e voltam quando você desmarca o Enxame. Os textos das caixas do diálogo ficaram mais curtos.",

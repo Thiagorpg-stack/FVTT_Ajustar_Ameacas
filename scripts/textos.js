@@ -37,17 +37,21 @@ export function atualizarNivelConjurador(texto, nivel) {
 // Atualiza o bônus de ataque e a fórmula de dano de cada arma citada no texto
 // ("Bordão +11 (1d8+4)" → "Bordão +22 (3d6+21)"). Dano secundário, crítico, quantidades e o resto
 // do texto ficam como estão. Arma que não aparece no texto não muda nada.
-// armas: [{ nome, ataque, formula? }]
+// armas: [{ nome, ataque, formula?, multiplicador? }]. Com `multiplicador` maior que 1 (Bando), o dano
+// extra escrito como "mais 1d6 ..." também ganha o "×N", já que o golpe inteiro é multiplicado.
 export function atualizarTextoAtaques(texto, armas) {
   if (!texto) return '';
   let resultado = texto;
-  for (const { nome, ataque, formula } of armas) {
+  for (const { nome, ataque, formula, multiplicador = 1 } of armas) {
     const trecho = new RegExp(`(${padraoDoNome(nome)})(\\s*)[+-]\\d+(\\s*)\\(([^)]*)\\)`, 'i');
     resultado = resultado.replace(trecho, (_, citado, espaco1, espaco2, parenteses) => {
       const sinal = ataque >= 0 ? '+' : '';
-      const dano = formula
+      let dano = formula
         ? parenteses.replace(/^(\s*)\d*d\d+(?:[+-]\d+)*/i, (__, inicio) => `${inicio}${formula}`)
         : parenteses;
+      if (formula && multiplicador > 1) {
+        dano = dano.replace(/(\bmais\s+)(\d*d\d+(?:[+-]\d+)*)/gi, (__, mais, extra) => `${mais}${extra} ×${multiplicador}`);
+      }
       return `${citado}${espaco1}${sinal}${ataque}${espaco2}(${dano})`;
     });
   }

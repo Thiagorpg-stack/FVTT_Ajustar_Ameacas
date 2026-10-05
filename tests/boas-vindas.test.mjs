@@ -80,3 +80,8 @@ test('a v0.8.1 anuncia Bando e Enxame juntos e as correções', () => {
   assert.equal(decidirMensagem('0.8.0', '0.8.1'), 'novidades');
   assert.match(montarMensagem('novidades', '0.8.1', t), /juntos/);
 });
+
+test('a v0.8.2 anuncia o dano extra do Bando e a correção dos ataques com o Enxame', () => {
+  assert.equal(decidirMensagem('0.8.1', '0.8.2'), 'novidades');
+  assert.match(montarMensagem('novidades', '0.8.2', t), /dano extra/);
+});
