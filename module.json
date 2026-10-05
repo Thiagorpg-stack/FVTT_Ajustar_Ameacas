@@ -3,6 +3,13 @@
   "title": "Tormenta20: Ajustar ND",
   "description": "Ajusta uma ameaça do sistema Tormenta20 para um ND e papel da tabela de parâmetros: PV, CD, defesa, ataque, resistências e dano por rodada, com prévia antes/depois.",
   "version": "0.1.0",
+  "authors": [
+    {
+      "name": "Thiago Cardim",
+      "url": "https://foundryvtt.com/community/cadimrpg"
+    }
+  ],
+  "license": "https://github.com/Thiagorpg-stack/FVTT_Ajustar_Ameacas/blob/main/LICENSE",
   "compatibility": {
     "minimum": "13",
     "verified": "13.351"
