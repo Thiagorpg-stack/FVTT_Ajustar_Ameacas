@@ -1,4 +1,7 @@
-.t20-ajuste-nd .ajuste-nd { display: flex; flex-direction: column; gap: 0.75rem; padding: 0.5rem; }
+/* A janela cresce com o conteúdo, mas nunca passa da tela: quem rola é o corpo do diálogo. */
+.t20-ajuste-nd { max-height: calc(100vh - 1rem); }
+.t20-ajuste-nd .window-content { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.t20-ajuste-nd .ajuste-nd { display: flex; flex-direction: column; gap: 0.75rem; padding: 0.5rem; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .t20-ajuste-nd .ajuste-nd__campos { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; }
 .t20-ajuste-nd .ajuste-nd__campos label { display: flex; flex-direction: column; gap: 0.2rem; }
 .t20-ajuste-nd .ajuste-nd__copia { flex-direction: row !important; align-items: center; gap: 0.4rem !important; }
