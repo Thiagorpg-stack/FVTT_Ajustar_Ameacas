@@ -140,8 +140,11 @@ function textoComTermos(texto, termos) {
 
 function mesclarRotulos(existente, novos) {
   const atuais = existente.split(/[;,]/).map(s => s.trim()).filter(Boolean);
-  const faltando = novos.filter(n => !atuais.some(a => a.toLowerCase() === n.toLowerCase()));
-  return [...atuais, ...faltando].join(', ');
+  const todos = [...atuais];
+  for (const n of novos) {
+    if (!todos.some(a => a.toLowerCase() === n.toLowerCase())) todos.push(n);
+  }
+  return todos.join(', ');
 }
 
 // Aplica a um item uma mudança no formato de itemUpdates ({ _id, 'system.rolls': ... }).

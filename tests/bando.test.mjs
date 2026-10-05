@@ -162,3 +162,11 @@ test('sem Bando o resultado não traz multiplicador', () => {
   assert.equal(r.templates.multDano, 1);
   assert.equal('system.tracos.tamanho' in r.update, false);
 });
+
+test('Bando junto com Enxame: ic.custom não repete rótulos que os dois templates trazem', () => {
+  const r = ajustar(ficha('anao'), '2', { ...bando('10-20', 2), enxame: true });
+  assert.equal(r.update['system.tracos.ic.custom'],
+    'Acertos críticos, Dano de precisão, Flanqueamento, Manobras de combate, Efeitos de alvo único sem dano');
+  const texto = r.update['system.detalhes.resistencias'];
+  assert.equal((texto.match(/imunidade a manobras de combate/g) ?? []).length, 1);
+});
