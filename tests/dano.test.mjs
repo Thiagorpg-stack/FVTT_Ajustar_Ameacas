@@ -133,3 +133,61 @@ test('alertaEquilibrio usa margem = max(5, 10% do alvo)', () => {
   assert.equal(alertaEquilibrio(18 + 5, 18), 'equilibrado'); // piso de 5
   assert.equal(alertaEquilibrio(18 + 6, 18), 'alto');
 });
+
+test('analisarDanoArma devolve também o dano principal médio (Vampiro: espada 2d8+25 = 34)', () => {
+  const espada = arma(ficha('vampiro'), 'Espada longa x2');
+  assert.equal(analisarDanoArma(espada.system.rolls).principal, 34);
+});
+
+const sacerdote = [
+  { id: 'corrente', ataques: 2, secundario: 3.5, principal: 26 },   // 4d6+12 mais 1d6 de ácido
+  { id: 'mordida', ataques: 1, secundario: 0, principal: 15.5 },     // 1d6+12
+];
+
+test('balancearDano mantém a proporção entre armas (Sacerdote ND 15: 186 por rodada)', () => {
+  const r = balancearDano({ danoAlvo: 186, armas: sacerdote });
+  assert.equal(r.porArma.corrente.formula, '7d6+46');
+  assert.equal(r.porArma.mordida.formula, '3d6+28');
+  assert.equal(r.grupos[0].obtido, 186.5);
+  assert.equal(r.grupos[0].alerta, 'equilibrado');
+});
+
+test('balancearDano: a razão entre os golpes fica próxima da original', () => {
+  const r = balancearDano({ danoAlvo: 186, armas: sacerdote });
+  const golpe = (id, sec) => mediaFormula(r.porArma[id].formula) + sec;
+  const razaoNova = golpe('corrente', 3.5) / golpe('mordida', 0);
+  const razaoOriginal = (26 + 3.5) / 15.5;
+  assert.ok(Math.abs(razaoNova - razaoOriginal) / razaoOriginal < 0.05, `${razaoNova} vs ${razaoOriginal}`);
+});
+
+test('balancearDano: manterProporcao false divide por igual (comportamento antigo)', () => {
+  const r = balancearDano({ danoAlvo: 186, armas: sacerdote, manterProporcao: false });
+  assert.equal(r.porArma.corrente.formula, '5d6+42');
+  assert.equal(r.porArma.mordida.formula, '5d6+42');
+});
+
+test('balancearDano: sem o dano principal de alguma arma, divide por igual', () => {
+  const r = balancearDano({
+    danoAlvo: 186,
+    armas: [{ id: 'a', ataques: 2, secundario: 3.5, principal: 26 }, { id: 'b', ataques: 1, secundario: 0 }],
+  });
+  assert.equal(r.porArma.a.formula, r.porArma.b.formula);
+});
+
+test('balancearDano: armas iguais continuam com a mesma fórmula', () => {
+  const r = balancearDano({
+    danoAlvo: 62,
+    armas: [{ id: 'bordao', ataques: 1, secundario: 0, principal: 8.5 }, { id: 'cascos', ataques: 1, secundario: 0, principal: 8.5 }],
+  });
+  assert.equal(r.porArma.bordao.formula, '3d6+21');
+  assert.equal(r.porArma.cascos.formula, '3d6+21');
+});
+
+test('balancearDano: o dano secundário fica fixo e só o principal é recalculado', () => {
+  const r = balancearDano({
+    danoAlvo: 144,
+    armas: [{ id: 'e', ataques: 1, secundario: 11, principal: 34 }, { id: 'g', ataques: 1, secundario: 11, principal: 32 }],
+  });
+  assert.equal(r.porArma.e.formula, '6d6+42');
+  assert.equal(r.porArma.g.formula, '5d6+42');
+});

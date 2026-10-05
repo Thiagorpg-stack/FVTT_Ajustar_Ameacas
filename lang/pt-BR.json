@@ -23,5 +23,9 @@
   "T20AJND.Aplicado": "Ajuste aplicado: {nome}",
   "T20AJND.AtualizarCDs": "Trocar a CD escrita nos textos de poderes, magias e armas",
   "T20AJND.AtualizarAtaques": "Atualizar as linhas de ataque (Corpo a Corpo / À Distância)",
-  "T20AJND.TextosAlterados": "Textos que serão alterados"
+  "T20AJND.TextosAlterados": "Textos que serão alterados",
+  "T20AJND.ManterProporcao": "Manter a proporção de dano entre as armas (a que causa mais dano continua causando mais)",
+  "T20AJND.TotalRodada": "Dano médio por rodada",
+  "T20AJND.De": "de",
+  "T20AJND.AtaquesTotal": "ataques por rodada"
 }

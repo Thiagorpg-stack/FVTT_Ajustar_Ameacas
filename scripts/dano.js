@@ -46,7 +46,11 @@ export function analisarDanoArma(rolls) {
   const secundarioOutras = outras.reduce(
     (s, { roll }) => s + roll.parts.reduce((t, p) => t + mediaDaParte(p), 0), 0);
 
-  return { indiceRoll: principal.indice, secundario: secundarioPrincipal + secundarioOutras };
+  return {
+    indiceRoll: principal.indice,
+    principal: mediaFormula(principal.roll.parts[0]?.[0]),
+    secundario: secundarioPrincipal + secundarioOutras,
+  };
 }
 
 export function alertaEquilibrio(obtido, sugerido) {
@@ -56,9 +60,12 @@ export function alertaEquilibrio(obtido, sugerido) {
   return diferenca > margem ? 'alto' : 'baixo';
 }
 
-// armas: [{ id, ataques, secundario, alternativa? }]. Armas "alternativas" são balanceadas
+// armas: [{ id, ataques, secundario, principal?, alternativa? }]. Armas "alternativas" são balanceadas
 // cada uma contra o dano total; as demais dividem o dano entre si.
-export function balancearDano({ danoAlvo, armas }) {
+// Com `manterProporcao` (padrão) o dano de cada golpe segue a proporção da ficha original (peso =
+// principal + secundário); o dano secundário fica fixo e só o principal é recalculado. Sem o dano
+// principal de alguma arma, ou com manterProporcao false, todos os golpes recebem a mesma fórmula.
+export function balancearDano({ danoAlvo, armas, manterProporcao = true }) {
   const ativas = armas.filter(a => a.ataques > 0);
   if (ativas.length === 0) throw new Error('Nenhuma arma com ataques por rodada maior que zero');
 
@@ -74,15 +81,27 @@ export function balancearDano({ danoAlvo, armas }) {
     const totalAtaques = grupo.reduce((s, a) => s + a.ataques, 0);
     const existente = grupo.reduce((s, a) => s + a.ataques * a.secundario, 0);
     const restante = Math.max(0, danoAlvo - existente);
-    const danoPorGolpe = restante / totalAtaques;
-    const formula = gerarFormulaDano(danoPorGolpe);
 
     if (existente > danoAlvo) {
       avisos.push(`O dano existente (${existente}) passa do alvo (${danoAlvo}); a fórmula ficou 0.`);
     }
-    for (const a of grupo) porArma[a.id] = { formula, danoPorGolpe };
 
-    const obtido = grupo.reduce((s, a) => s + a.ataques * ((mediaFormula(formula) ?? 0) + a.secundario), 0);
+    const pesos = grupo.map(a => (a.principal == null ? null : a.principal + a.secundario));
+    const proporcional = manterProporcao && grupo.length > 1 && pesos.every(p => p !== null && p > 0);
+    if (proporcional) {
+      const escala = danoAlvo / grupo.reduce((s, a, i) => s + a.ataques * pesos[i], 0);
+      grupo.forEach((a, i) => {
+        const danoPorGolpe = Math.max(0, escala * pesos[i] - a.secundario);
+        porArma[a.id] = { formula: gerarFormulaDano(danoPorGolpe), danoPorGolpe };
+      });
+    } else {
+      const danoPorGolpe = restante / totalAtaques;
+      const formula = gerarFormulaDano(danoPorGolpe);
+      for (const a of grupo) porArma[a.id] = { formula, danoPorGolpe };
+    }
+
+    const obtido = grupo.reduce(
+      (s, a) => s + a.ataques * ((mediaFormula(porArma[a.id].formula) ?? 0) + a.secundario), 0);
     return { ids: grupo.map(a => a.id), obtido, alerta: alertaEquilibrio(obtido, danoAlvo) };
   });
 

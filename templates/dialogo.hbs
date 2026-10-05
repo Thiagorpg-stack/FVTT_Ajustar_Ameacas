@@ -17,6 +17,10 @@
   </div>
   <div class="ajuste-nd__campos">
     <label class="ajuste-nd__copia">
+      <input type="checkbox" name="manterProporcao" {{#if manterProporcao}}checked{{/if}}>
+      {{localize "T20AJND.ManterProporcao"}}
+    </label>
+    <label class="ajuste-nd__copia">
       <input type="checkbox" name="atualizarCDs" {{#if atualizarCDs}}checked{{/if}}>
       {{localize "T20AJND.AtualizarCDs"}}
     </label>
@@ -78,6 +82,9 @@
         {{/each}}
       </tbody>
     </table>
+    {{#if rodada}}
+    <p class="ajuste-nd__rodada">{{localize "T20AJND.TotalRodada"}}: <strong>{{rodada.obtido}}</strong> {{localize "T20AJND.De"}} {{rodada.alvo}} ({{rodada.ataques}} {{localize "T20AJND.AtaquesTotal"}})</p>
+    {{/if}}
   </fieldset>
 
   {{#if textos.temAlgo}}

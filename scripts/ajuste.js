@@ -46,14 +46,14 @@ function calibrar({ dados, update, alvosPericias, alvoDefesa, medir }) {
 export function calcularAjuste({
   dados, tabelas, nd, papel, medir,
   ataquesPorArma = {}, alternativas = {}, ordemResistencias,
-  atualizarCDs = true, atualizarTextoAtaques = true,
+  atualizarCDs = true, atualizarTextoAtaques = true, manterProporcao = true,
 }) {
   const antes = medir({});
   const armas = lerArmas(dados.items, dados.system.detalhes.ataquescac ?? '');
   const plano = planejarAjuste({
     tabelas, papel, nd, armas, itens: dados.items,
     totais: { fort: antes.pericias.fort, refl: antes.pericias.refl, vont: antes.pericias.vont },
-    ataquesPorArma, alternativas, ordemResistencias,
+    ataquesPorArma, alternativas, ordemResistencias, manterProporcao,
   });
   const { alvos } = plano;
 

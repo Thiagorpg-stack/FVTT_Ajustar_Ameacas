@@ -136,10 +136,10 @@ test('planejarAjuste: troca de papel Lacaio → Solo muda os alvos', () => {
   assert.deepEqual(p.alvos, { pv: 15, cd: 13, defesa: 14, ataque: 7 });
 });
 
-test('planejarAjuste: Vampiro ND 12 Solo → 6d6+40 nas duas armas, sem avisos de patamar', () => {
+test('planejarAjuste: Vampiro ND 12 Solo mantém a proporção entre espada e garra, sem avisos de patamar', () => {
   const p = planoDe('vampiro', 'solo', '12');
-  assert.equal(p.dano.porArma.P42NmIP3WqZtXdNV.formula, '6d6+40');
-  assert.equal(p.dano.porArma.WujAqyrLbw0W7frD.formula, '6d6+40');
+  assert.equal(p.dano.porArma.P42NmIP3WqZtXdNV.formula, '6d6+42'); // espada (2d8+25)
+  assert.equal(p.dano.porArma.WujAqyrLbw0W7frD.formula, '5d6+42'); // garra (2d6+25)
   assert.deepEqual(p.avisos, []);
   assert.deepEqual(p.revisar, ['Drenar Sangue']);
 });

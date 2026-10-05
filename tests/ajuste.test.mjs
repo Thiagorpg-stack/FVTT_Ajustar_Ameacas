@@ -80,7 +80,7 @@ test('calcularAjuste: atualiza as armas (rolagens e system.ataques)', () => {
   const garra = r.itemUpdates.find(u => u._id === 'WujAqyrLbw0W7frD');
   assert.equal(garra['system.ataques'], 1);
   assert.equal(garra['system.rolls'][0].parts[2][0], '0');
-  assert.equal(garra['system.rolls'][1].parts[0][0], '6d6+40');
+  assert.equal(garra['system.rolls'][1].parts[0][0], '5d6+42');
 });
 
 test('calcularAjuste: não altera os dados recebidos', () => {
@@ -174,4 +174,24 @@ test('textos: dá para desligar a troca de CD e a de linhas de ataque', () => {
   const semAtaques = ajustar(c, '7', 'special', { atualizarTextoAtaques: false });
   assert.equal('system.detalhes.ataquescac' in semAtaques.update, false);
   assert.deepEqual(semAtaques.textos.ataques, []);
+});
+
+test('proporção: Sacerdote da Tormenta ND 10 → ND 15 mantém corrente com quase o dobro da mordida', () => {
+  const s = ficha('sacerdote');
+  const r = ajustar(s, '15', 'special');
+  const corrente = r.itemUpdates.find(u => u._id === '65aJVp8OY7wU4c7I');
+  const mordida = r.itemUpdates.find(u => u._id === 'beHzVw8I80nr1KUo');
+  assert.equal(corrente['system.ataques'], 2);
+  assert.equal(mordida['system.ataques'], 1);
+  assert.equal(corrente['system.rolls'][1].parts[0][0], '7d6+46');
+  assert.equal(corrente['system.rolls'][1].parts[2][0], '1d6'); // ácido continua igual
+  assert.equal(mordida['system.rolls'][1].parts[0][0], '3d6+28');
+  assert.equal(r.update['system.detalhes.ataquescac'],
+    'Duas correntes de espinhos aberrantes +41 (7d6+46 mais 1d6 de ácido) e mordida +41 (3d6+28).');
+});
+
+test('proporção: manterProporcao false dá a mesma fórmula às duas armas do Sacerdote', () => {
+  const r = ajustar(ficha('sacerdote'), '15', 'special', { manterProporcao: false });
+  const formulas = r.itemUpdates.map(u => u['system.rolls']?.[1].parts[0][0]).filter(Boolean);
+  assert.deepEqual(formulas, ['5d6+42', '5d6+42']);
 });

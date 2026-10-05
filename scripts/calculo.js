@@ -35,6 +35,7 @@ export function lerArmas(items, ataquescac = '') {
       alternativa: false,
       pericia: ataque?.parts?.[1]?.[0] || 'luta',
       indiceRollDano: dano.indiceRoll,
+      principal: dano.principal,
       secundario: dano.secundario,
     });
   }
@@ -76,7 +77,7 @@ export function revisarItens(items) {
 
 export function planejarAjuste({
   tabelas, papel, nd, totais, armas, itens = [],
-  ataquesPorArma = {}, alternativas = {}, ordemResistencias,
+  ataquesPorArma = {}, alternativas = {}, ordemResistencias, manterProporcao = true,
 }) {
   const linha = consultar(tabelas, papel, nd);
   const armasFinais = armas.map(a => ({
@@ -88,7 +89,7 @@ export function planejarAjuste({
   const avisos = [];
   let dano = null;
   if (armasFinais.some(a => a.ataques > 0)) {
-    dano = balancearDano({ danoAlvo: linha.Dano, armas: armasFinais });
+    dano = balancearDano({ danoAlvo: linha.Dano, armas: armasFinais, manterProporcao });
     avisos.push(avisoLimite(armasFinais.filter(a => a.ataques > 0), nd), ...dano.avisos);
   } else {
     avisos.push('Nenhuma arma com ataques por rodada maior que zero: o dano não será alterado.');

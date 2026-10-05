@@ -12,7 +12,7 @@ Na ficha de uma ameaça (ou no menu de contexto do diretório de atores), o mest
 | Ataque | O total de Luta/Pontaria (as perícias das armas) vira o ataque da tabela; termos numéricos nas rolagens de ataque viram `0`. |
 | Resistências | Mantém a ordem atual (o teste mais alto recebe a resistência Forte); o mestre pode trocar na prévia. |
 | Defesa | O total mostrado na ficha vira o da tabela, ajustando só `defesa.base` (a ficha soma DES, armadura e escudo). |
-| Dano | Fórmula `Nd6+B` por arma, dividindo o dano por rodada da tabela entre os ataques (dano secundário e armas alternativas são tratados). |
+| Dano | Fórmula `Nd6+B` por arma, dividindo o dano por rodada da tabela entre os golpes. Por padrão mantém a **proporção** entre as armas da ficha original (a que causava mais dano continua causando mais); o dano secundário (como "1d6 de ácido") fica fixo e só o principal é recalculado. Desligando a opção, todas as armas recebem a mesma fórmula. Armas alternativas (uma OU outra) são balanceadas cada uma contra o dano total. |
 
 Textos escritos à mão (podem ser desligados no diálogo):
 
