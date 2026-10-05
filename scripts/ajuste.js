@@ -8,6 +8,7 @@ import {
 } from './textos.js';
 import { nivelDoND, sugerirCirculos } from './circulos.js';
 import { faixaDeHabilidades, avisosDePatamar } from './patamares.js';
+import { aplicarTemplates, ehItemDeTemplate, idAleatorio } from './templates.js';
 
 const NUMERO = /^[+-]?\d+(\.\d+)?$/;
 const TIPOS_COM_CD = ['poder', 'magia', 'arma'];
@@ -52,6 +53,7 @@ export function calcularAjuste({
   dados, tabelas, nd, papel, medir,
   ataquesPorArma = {}, alternativas = {}, ordemResistencias,
   atualizarCDs = true, atualizarTextoAtaques = true, atualizarNivelConjurador = true, manterProporcao = true,
+  templates = {}, gerarId = idAleatorio,
 }) {
   const antes = medir({});
   const armas = lerArmas(dados.items, dados.system.detalhes.ataquescac ?? '');
@@ -65,8 +67,8 @@ export function calcularAjuste({
   const update = {
     'system.attributes.nd': normalizarND(nd),
     'system.detalhes.role': papel,
-    'system.attributes.pv.max': alvos.pv,
-    'system.attributes.pv.value': alvos.pv,
+    'system.attributes.pv.max': alvos.pv * (templates.chefeFinal ? 2 : 1),
+    'system.attributes.pv.value': alvos.pv * (templates.chefeFinal ? 2 : 1),
     'system.attributes.cd': alvos.cd,
   };
 
@@ -155,9 +157,17 @@ export function calcularAjuste({
     ndDepois: nd,
     papel,
     ataques: totalAtaques(armasFinais.filter(a => a.ataques > 0)),
-    poderes: dados.items.filter(i => i.type === 'poder').length,
+    poderes: dados.items.filter(i => i.type === 'poder' && !ehItemDeTemplate(i)).length,
     faixa: faixaDeHabilidades(tabelas, papel, nd),
   });
 
-  return { plano, update, itemUpdates, antes, depois, avisos, textos, sugestoes, patamar };
+  // Templates (Chefe Final...): PM, RD e itens próprios; sempre calculados a partir do estado base.
+  const modelo = aplicarTemplates({ dados, nd, ativos: templates, gerarId });
+  Object.assign(update, modelo.update);
+
+  return {
+    plano, update, itemUpdates, antes, depois, avisos, textos, sugestoes, patamar,
+    itensCriar: modelo.itensCriar, itensRemover: modelo.itensRemover,
+    templates: { linhas: modelo.linhas, notas: modelo.notas },
+  };
 }

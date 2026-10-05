@@ -34,6 +34,13 @@
     </label>
   </div>
 
+  <div class="ajuste-nd__campos">
+    <label class="ajuste-nd__copia">
+      <input type="checkbox" name="chefeFinal" {{#if chefeFinal}}checked{{/if}}>
+      {{localize "T20AJND.ChefeFinal"}}
+    </label>
+  </div>
+
   <fieldset>
     <legend>{{localize "T20AJND.Resistencias"}}</legend>
     <div class="ajuste-nd__campos">
@@ -106,6 +113,13 @@
   <div class="ajuste-nd__avisos">
     <strong>{{localize "T20AJND.Avisos"}}</strong>
     <ul>{{#each avisos}}<li>{{this}}</li>{{/each}}</ul>
+  </div>
+  {{/if}}
+
+  {{#if notasTemplates.length}}
+  <div class="ajuste-nd__templates">
+    <strong>{{localize "T20AJND.Templates"}}</strong>
+    <ul>{{#each notasTemplates}}<li>{{this}}</li>{{/each}}</ul>
   </div>
   {{/if}}
 

@@ -5,6 +5,7 @@
 export const NOVIDADES = {
   '0.4.0': ['T20AJND.Novidade040Conjurador', 'T20AJND.Novidade040Circulos', 'T20AJND.Novidade040Boasvindas'],
   '0.5.0': ['T20AJND.Novidade050Patamar'],
+  '0.6.0': ['T20AJND.Novidade060ChefeFinal'],
 };
 
 const versaoComoNumeros = (versao) => String(versao ?? '').split('.').map(n => parseInt(n, 10) || 0);

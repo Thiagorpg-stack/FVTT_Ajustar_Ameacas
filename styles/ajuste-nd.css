@@ -16,6 +16,7 @@
 .t20-ajuste-nd .selo-baixo { background: #b8860b; }
 .t20-ajuste-nd .ajuste-nd__erro { color: #c62828; font-weight: bold; }
 .t20-ajuste-nd .ajuste-nd__avisos { border-left: 3px solid #b8860b; padding-left: 0.5rem; }
+.t20-ajuste-nd .ajuste-nd__templates { border-left: 3px solid #ef6c00; padding-left: 0.5rem; }
 .t20-ajuste-nd .ajuste-nd__patamar { border-left: 3px solid #00838f; padding-left: 0.5rem; }
 .t20-ajuste-nd .ajuste-nd__sugestoes { border-left: 3px solid #6a1b9a; padding-left: 0.5rem; }
 .t20-ajuste-nd .ajuste-nd__revisar { border-left: 3px solid #1565c0; padding-left: 0.5rem; }

@@ -2,6 +2,7 @@
 import { lerArmas, ordenarResistencias } from './calculo.js';
 import { mediaFormula } from './dano.js';
 import { aplicarAjuste, criarMedidor, simular, ID_MODULO } from './aplicar.js';
+import { lerMarcador } from './templates.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -38,6 +39,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       atualizarTextoAtaques: true,
       atualizarNivelConjurador: true,
       manterProporcao: true,
+      chefeFinal: lerMarcador(dados)?.ativos?.includes('chefeFinal') ?? false,
       ataques: Object.fromEntries(armas.map(a => [a.id, a.ataques])),
       alternativas: {},
       ordem: ordenarResistencias(criarMedidor(actor)().pericias),
@@ -59,7 +61,8 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       atualizarTextoAtaques: e.atualizarTextoAtaques,
       atualizarNivelConjurador: e.atualizarNivelConjurador,
       manterProporcao: e.manterProporcao,
-      erro: null, linhas: [], armas: [], avisos: [], revisar: [], sugestoes: [], patamar: [], selo: null, ordem: [],
+      chefeFinal: e.chefeFinal,
+      erro: null, linhas: [], armas: [], avisos: [], revisar: [], sugestoes: [], patamar: [], notasTemplates: [], selo: null, ordem: [],
     };
     contexto.ordem = ['Forte', 'Média', 'Fraca'].map((rotulo, i) => ({
       indice: i, rotulo,
@@ -78,6 +81,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
         alternativas: e.alternativas, ordemResistencias: e.ordem,
         atualizarCDs: e.atualizarCDs, atualizarTextoAtaques: e.atualizarTextoAtaques,
         atualizarNivelConjurador: e.atualizarNivelConjurador, manterProporcao: e.manterProporcao,
+        templates: { chefeFinal: e.chefeFinal },
       });
     } catch (erro) {
       console.error(`${ID_MODULO} |`, erro);
@@ -101,6 +105,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       linha('Defesa (total na ficha)', r.antes.defesa, r.depois.defesa),
       ...usadas.map(k => linha(`Ataque (${PERICIAS_ATAQUE[k] ?? k})`, r.antes.pericias[k], r.depois.pericias[k])),
       ...Object.entries(TESTES).map(([k, nome]) => linha(nome, r.antes.pericias[k], r.depois.pericias[k])),
+      ...r.templates.linhas.map(({ rotulo, antes, depois }) => linha(rotulo, antes, depois)),
     ];
 
     const linhasArmas = armas.map((arma) => {
@@ -128,7 +133,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     } : null;
     const pior = grupos.find(g => g.alerta !== 'equilibrado') ?? grupos[0];
     return {
-      linhas, armas: linhasArmas, avisos: r.avisos, revisar: r.plano.revisar, sugestoes: r.sugestoes, patamar: r.patamar,
+      linhas, armas: linhasArmas, avisos: r.avisos, revisar: r.plano.revisar, sugestoes: r.sugestoes, patamar: r.patamar, notasTemplates: r.templates.notas,
       textos: this.#montarTextos(r.textos),
       danoAlvo: r.plano.linha.Dano,
       rodada,
@@ -163,6 +168,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     e.atualizarTextoAtaques = el.querySelector('[name=atualizarTextoAtaques]').checked;
     e.atualizarNivelConjurador = el.querySelector('[name=atualizarNivelConjurador]').checked;
     e.manterProporcao = el.querySelector('[name=manterProporcao]').checked;
+    e.chefeFinal = el.querySelector('[name=chefeFinal]').checked;
     el.querySelectorAll('[data-ataques]').forEach((c) => {
       e.ataques[c.dataset.ataques] = Math.max(0, parseInt(c.value, 10) || 0);
     });

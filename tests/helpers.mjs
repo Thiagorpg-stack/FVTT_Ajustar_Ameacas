@@ -46,7 +46,7 @@ export const totaisResistencias = (a) => ({
 function definir(obj, caminho, valor) {
   const chaves = caminho.split('.');
   const ultima = chaves.pop();
-  const alvo = chaves.reduce((o, k) => o[k], obj);
+  const alvo = chaves.reduce((o, k) => (o[k] ??= {}), obj);
   alvo[ultima] = valor;
 }
 
@@ -59,4 +59,20 @@ export function criarMedidor(original) {
     for (const k of ['luta', 'pont', 'fort', 'refl', 'vont']) pericias[k] = totalPericia(f, k);
     return { pericias, defesa: totalDefesa(f) };
   };
+}
+
+// Imita a gravação de um ajuste numa cópia da ficha (o modo "criar cópia" de aplicarAjuste):
+// update e itemUpdates entram por caminho, itens de template saem e entram como no Foundry.
+export function gravarResultado(original, resultado) {
+  const f = structuredClone(original);
+  for (const [caminho, valor] of Object.entries(resultado.update)) definir(f, caminho, structuredClone(valor));
+  for (const mudanca of resultado.itemUpdates) {
+    const item = f.items.find(i => i._id === mudanca._id);
+    for (const [caminho, valor] of Object.entries(mudanca)) {
+      if (caminho !== '_id') definir(item, caminho, structuredClone(valor));
+    }
+  }
+  const remover = new Set(resultado.itensRemover ?? []);
+  f.items = f.items.filter(i => !remover.has(i._id)).concat(structuredClone(resultado.itensCriar ?? []));
+  return f;
 }

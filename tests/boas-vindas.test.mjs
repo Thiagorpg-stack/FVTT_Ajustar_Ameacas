@@ -60,3 +60,8 @@ test('a v0.5.0 anuncia os avisos de patamar', () => {
   assert.equal(decidirMensagem('0.4.0', '0.5.0'), 'novidades');
   assert.match(montarMensagem('novidades', '0.5.0', t), /patamar/i);
 });
+
+test('a v0.6.0 anuncia o template Chefe Final', () => {
+  assert.equal(decidirMensagem('0.5.0', '0.6.0'), 'novidades');
+  assert.match(montarMensagem('novidades', '0.6.0', t), /Chefe Final/);
+});

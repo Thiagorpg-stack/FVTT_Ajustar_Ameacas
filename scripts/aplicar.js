@@ -25,18 +25,21 @@ export async function simular(actor, opcoes) {
     dados: actor.toObject(),
     tabelas: await obterTabelas(),
     medir: criarMedidor(actor),
+    gerarId: () => foundry.utils.randomID(),
     ...opcoes,
   });
 }
 
 // Grava o ajuste. Com `copiar`, cria um ator novo com o ajuste e deixa o original intacto.
 export async function aplicarAjuste(actor, resultado, { copiar = true } = {}) {
-  const { update, itemUpdates } = resultado;
+  const { update, itemUpdates, itensCriar = [], itensRemover = [] } = resultado;
   console.info(`${ID_MODULO} | Ajustando ${actor.name}`, { update, itemUpdates, copiar });
 
   if (!copiar) {
     await actor.update(update);
     await actor.updateEmbeddedDocuments('Item', itemUpdates);
+    if (itensRemover.length) await actor.deleteEmbeddedDocuments('Item', itensRemover);
+    if (itensCriar.length) await actor.createEmbeddedDocuments('Item', itensCriar, { keepId: true });
     return actor;
   }
 
@@ -46,6 +49,8 @@ export async function aplicarAjuste(actor, resultado, { copiar = true } = {}) {
     const item = dados.items.find(i => i._id === mudanca._id);
     foundry.utils.mergeObject(item, foundry.utils.expandObject(mudanca));
   }
+  const remover = new Set(itensRemover);
+  dados.items = dados.items.filter(i => !remover.has(i._id)).concat(itensCriar);
   delete dados._id;
   delete dados._stats;
   dados.name = `${actor.name} (ND ${update['system.attributes.nd']})`;
