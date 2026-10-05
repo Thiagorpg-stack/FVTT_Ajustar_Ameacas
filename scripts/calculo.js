@@ -80,6 +80,8 @@ export function revisarItens(items) {
     .map(i => i.name);
 }
 
+export const AVISO_SEM_ARMAS = 'Nenhuma arma com ataques por rodada maior que zero: o dano não será alterado.';
+
 export function planejarAjuste({
   tabelas, papel, nd, totais, armas, itens = [],
   ataquesPorArma = {}, alternativas = {}, ordemResistencias, manterProporcao = true,
@@ -97,7 +99,7 @@ export function planejarAjuste({
     dano = balancearDano({ danoAlvo: linha.Dano, armas: armasFinais, manterProporcao });
     avisos.push(avisoLimite(armasFinais.filter(a => a.ataques > 0), nd), ...dano.avisos);
   } else {
-    avisos.push('Nenhuma arma com ataques por rodada maior que zero: o dano não será alterado.');
+    avisos.push(AVISO_SEM_ARMAS);
   }
 
   return {

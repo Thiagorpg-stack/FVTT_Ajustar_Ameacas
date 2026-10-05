@@ -1,6 +1,6 @@
 // Monta e calibra o ajuste de uma ficha. Sem dependência do Foundry: quem mede o que a ficha
 // mostra (o clone preparado, no Foundry) entra como a função `medir`.
-import { lerArmas, planejarAjuste, totalAtaques } from './calculo.js';
+import { lerArmas, planejarAjuste, totalAtaques, AVISO_SEM_ARMAS } from './calculo.js';
 import { normalizarND } from './tabelas.js';
 import {
   atualizarCDs as trocarCDs, atualizarTextoAtaques as trocarTextoAtaques,
@@ -8,7 +8,7 @@ import {
 } from './textos.js';
 import { nivelDoND, sugerirCirculos } from './circulos.js';
 import { faixaDeHabilidades, avisosDePatamar } from './patamares.js';
-import { aplicarTemplates, ehItemDeTemplate, idAleatorio } from './templates.js';
+import { aplicarTemplates, ehItemDeTemplate, idAleatorio, lerMarcador, restaurarDados } from './templates.js';
 
 const NUMERO = /^[+-]?\d+(\.\d+)?$/;
 const TIPOS_COM_CD = ['poder', 'magia', 'arma'];
@@ -50,13 +50,16 @@ function calibrar({ dados, update, alvosPericias, alvoDefesa, medir }) {
 }
 
 export function calcularAjuste({
-  dados, tabelas, nd, papel, medir,
+  dados: dadosReais, tabelas, nd, papel, medir,
   ataquesPorArma = {}, alternativas = {}, ordemResistencias,
   atualizarCDs = true, atualizarTextoAtaques = true, atualizarNivelConjurador = true, manterProporcao = true,
   templates = {}, gerarId = idAleatorio,
 }) {
+  // O que o Enxame alterou (ataques das armas, linha de ataque) volta ao original antes do cálculo.
+  const dados = restaurarDados(dadosReais);
   const antes = medir({});
   const armas = lerArmas(dados.items, dados.system.detalhes.ataquescac ?? '');
+  if (templates.enxame) ataquesPorArma = Object.fromEntries(armas.map(a => [a.id, 0]));
   const plano = planejarAjuste({
     tabelas, papel, nd, armas, itens: dados.items,
     totais: { fort: antes.pericias.fort, refl: antes.pericias.refl, vont: antes.pericias.vont },
@@ -77,7 +80,7 @@ export function calcularAjuste({
 
   const depois = calibrar({ dados, update, alvosPericias, alvoDefesa: alvos.defesa, medir });
 
-  const avisos = [...plano.avisos];
+  const avisos = plano.avisos.filter(a => !(templates.enxame && a === AVISO_SEM_ARMAS));
   if (update[CAMINHO_DEFESA] !== alvos.defesa) {
     avisos.push(`A defesa soma atributo/armadura da ficha: defesa.base ficou ${update[CAMINHO_DEFESA]} para o total ser ${alvos.defesa}.`);
   }
@@ -156,14 +159,19 @@ export function calcularAjuste({
     ndAntes: dados.system.attributes.nd,
     ndDepois: nd,
     papel,
-    ataques: totalAtaques(armasFinais.filter(a => a.ataques > 0)),
+    ataques: templates.enxame ? null : totalAtaques(armasFinais.filter(a => a.ataques > 0)),
     poderes: dados.items.filter(i => i.type === 'poder' && !ehItemDeTemplate(i)).length,
     faixa: faixaDeHabilidades(tabelas, papel, nd),
   });
 
   // Templates (Chefe Final...): PM, RD e itens próprios; sempre calculados a partir do estado base.
-  const modelo = aplicarTemplates({ dados, nd, ativos: templates, gerarId });
+  const modelo = aplicarTemplates({ dados: dadosReais, nd, ativos: templates, danoND: plano.linha.Dano, gerarId });
   Object.assign(update, modelo.update);
+  // Sem o Enxame, a linha de ataque original tem de voltar mesmo que o texto novo seja igual a ela.
+  const eraEnxame = lerMarcador(dadosReais)?.ativos?.includes('enxame');
+  if (eraEnxame && !templates.enxame && !('system.detalhes.ataquescac' in update)) {
+    update['system.detalhes.ataquescac'] = dados.system.detalhes.ataquescac;
+  }
 
   return {
     plano, update, itemUpdates, antes, depois, avisos, textos, sugestoes, patamar,

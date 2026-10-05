@@ -19,9 +19,28 @@ Textos escritos à mão (podem ser desligados no diálogo):
 | Texto | Como |
 |---|---|
 | CD nas descrições | Em poderes, magias e armas, troca só o número depois de "CD" (ex.: "CD 17" vira "CD 26"). O resto do texto não muda. |
+| Nível de conjurador | "Lança magias como um clérigo de 10º nível" passa a usar o ND de destino como nível (a classe e o um/uma ficam como estão). |
 | Linhas de ataque (Corpo a Corpo / À Distância) | Troca o bônus de ataque e a fórmula de dano de cada arma citada (ex.: "Bordão +11 (1d8+4)" vira "Bordão +22 (3d6+21)"). Dano secundário, crítico, quantidades e o resto do texto ficam como estão. Só mexe em campos que já têm texto. |
 
-Não alteram: PM, atributos, efeitos ativos e o conteúdo de poderes e magias (poderes e magias com dano aparecem na lista "Para revisar").
+Não alteram: atributos, efeitos ativos e o conteúdo de poderes e magias (poderes e magias com dano aparecem na lista "Para revisar"). O PM só muda com o template Chefe Final.
+
+## Avisos na prévia (nada é alterado na ficha)
+
+- **Patamar de ND:** ao mudar de Iniciante, Veterano, Campeão ou Lenda, mostra o limite de ataques por rodada e a faixa de poderes sugerida para o papel (Solo e Lacaio: 1–2, 2–4, 3–6, 4–8; Especial: 2–3, 4–6, 6–9, 8–12). Sem mudança de patamar, só avisa se a ficha estiver fora da faixa. Os poderes criados pelos templates não entram na conta.
+- **Círculos de magia:** com o novo nível de conjurador, avisa o círculo liberado (ou acima do permitido) e quantos a ficha já tem. Tabelas por classe: arcanista, clérigo, druida e "conjurador" liberam o 4º círculo no 13º nível; bardo no 14º; paladino e guardião no 16º.
+
+## Templates
+
+Marque na prévia. Cada template marcado grava um marcador no ator com o estado original, e os itens que cria levam uma flag do módulo. Reaplicar não duplica nada, e desmarcar devolve a ficha ao que era. Com template, o nome da cópia leva só a tag ("Nome (Chefe Final)").
+
+| Template | O que faz |
+|---|---|
+| Chefe Final | PV ×2; PM + 2×ND (só quem já tem PM); RD mínima por patamar (Veterano 5, Campeão 10, Lenda 20, gravada em `tracos.resistencias.dano.base` e no texto de resistências); poder **Maior que a Morte**. XP de ND + 2 (nota na prévia). |
+| Enxame | Zera os ataques das armas (elas não são apagadas); cria o poder **Enxame** (dano automático com a média do dano do ND) e os poderes Movimentação Tática, Resistência a Armas, Vulnerabilidade a Área e Interações Mágicas; troca a linha de Corpo a Corpo pelo ataque do enxame; acrescenta as imunidades ao texto de resistências e a `tracos.ic.custom`. |
+
+## Mensagem no chat
+
+Na primeira vez que o módulo roda num mundo, o Mestre recebe (por sussurro) uma mensagem com o resumo da ferramenta. Quando a versão sobe e há novidades, recebe só as novidades daquela versão.
 
 A prévia é calculada num clone da ficha; o **Aplicar** grava uma vez. Por padrão o módulo cria uma cópia e deixa o original intacto.
 
@@ -40,6 +59,6 @@ npm test                # testes em Node, sem o Foundry
 npm run gerar-tables    # regenera data/tables.json a partir do data.js da calculadora de parâmetros
 ```
 
-As regras de cálculo ficam em `scripts/dano.js`, `scripts/calculo.js` e `scripts/ajuste.js`, sem dependência do Foundry. `scripts/aplicar.js`, `scripts/dialogo.js` e `scripts/main.js` fazem a ponte com o Foundry.
+As regras de cálculo ficam em `scripts/dano.js`, `scripts/calculo.js`, `scripts/ajuste.js`, `scripts/textos.js`, `scripts/circulos.js`, `scripts/patamares.js`, `scripts/templates.js` e `scripts/boas-vindas.js`, sem dependência do Foundry. `scripts/aplicar.js`, `scripts/dialogo.js` e `scripts/main.js` fazem a ponte com o Foundry.
 
 Os testes usam fichas reais exportadas do Foundry em `tests/fixtures/`. Elas não fazem parte do repositório (texto do compendium com direitos autorais). Para rodar os testes, exporte as ameaças (Goblin Salteador, Recruta Supremacista, Anão Veterano, Aparição, Troll, Glop de Sangue, Golem de Ferro, Sacerdote da Tormenta, Hidra, Vampiro e Dragão Venerável) como JSON e coloque nessa pasta.

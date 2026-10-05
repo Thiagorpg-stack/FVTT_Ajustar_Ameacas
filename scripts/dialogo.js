@@ -40,6 +40,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       atualizarNivelConjurador: true,
       manterProporcao: true,
       chefeFinal: lerMarcador(dados)?.ativos?.includes('chefeFinal') ?? false,
+      enxame: lerMarcador(dados)?.ativos?.includes('enxame') ?? false,
       ataques: Object.fromEntries(armas.map(a => [a.id, a.ataques])),
       alternativas: {},
       ordem: ordenarResistencias(criarMedidor(actor)().pericias),
@@ -62,6 +63,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       atualizarNivelConjurador: e.atualizarNivelConjurador,
       manterProporcao: e.manterProporcao,
       chefeFinal: e.chefeFinal,
+      enxame: e.enxame,
       erro: null, linhas: [], armas: [], avisos: [], revisar: [], sugestoes: [], patamar: [], notasTemplates: [], selo: null, ordem: [],
     };
     contexto.ordem = ['Forte', 'Média', 'Fraca'].map((rotulo, i) => ({
@@ -81,7 +83,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
         alternativas: e.alternativas, ordemResistencias: e.ordem,
         atualizarCDs: e.atualizarCDs, atualizarTextoAtaques: e.atualizarTextoAtaques,
         atualizarNivelConjurador: e.atualizarNivelConjurador, manterProporcao: e.manterProporcao,
-        templates: { chefeFinal: e.chefeFinal },
+        templates: { chefeFinal: e.chefeFinal, enxame: e.enxame },
       });
     } catch (erro) {
       console.error(`${ID_MODULO} |`, erro);
@@ -110,7 +112,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const linhasArmas = armas.map((arma) => {
       const item = dados.items.find(i => i._id === arma.id);
-      const ataques = this.estado.ataques[arma.id] ?? arma.ataques;
+      const ataques = this.estado.enxame ? 0 : (this.estado.ataques[arma.id] ?? arma.ataques);
       const antes = item.system.rolls[arma.indiceRollDano].parts[0][0];
       const novo = r.itemUpdates.find(u => u._id === arma.id)['system.rolls'][arma.indiceRollDano].parts[0][0];
       const depois = ataques > 0 ? novo : null;
@@ -169,6 +171,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     e.atualizarNivelConjurador = el.querySelector('[name=atualizarNivelConjurador]').checked;
     e.manterProporcao = el.querySelector('[name=manterProporcao]').checked;
     e.chefeFinal = el.querySelector('[name=chefeFinal]').checked;
+    e.enxame = el.querySelector('[name=enxame]').checked;
     el.querySelectorAll('[data-ataques]').forEach((c) => {
       e.ataques[c.dataset.ataques] = Math.max(0, parseInt(c.value, 10) || 0);
     });

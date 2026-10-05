@@ -39,6 +39,10 @@
       <input type="checkbox" name="chefeFinal" {{#if chefeFinal}}checked{{/if}}>
       {{localize "T20AJND.ChefeFinal"}}
     </label>
+    <label class="ajuste-nd__copia">
+      <input type="checkbox" name="enxame" {{#if enxame}}checked{{/if}}>
+      {{localize "T20AJND.Enxame"}}
+    </label>
   </div>
 
   <fieldset>
@@ -85,7 +89,7 @@
         {{#each armas}}
         <tr>
           <td>{{nome}}</td>
-          <td><input type="number" min="0" max="9" value="{{ataques}}" data-ataques="{{id}}"></td>
+          <td><input type="number" min="0" max="9" value="{{ataques}}" data-ataques="{{id}}" {{#if ../enxame}}disabled{{/if}}></td>
           <td><input type="checkbox" data-alternativa="{{id}}" {{#if alternativa}}checked{{/if}}></td>
           <td>{{antes}}</td>
           <td>{{#if depois}}{{depois}} <small>(≈ {{mediaDepois}})</small>{{else}}<em>{{localize "T20AJND.SemAlteracao"}}</em>{{/if}}</td>

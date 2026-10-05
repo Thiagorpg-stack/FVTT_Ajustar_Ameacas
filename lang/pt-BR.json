@@ -24,6 +24,7 @@
   "T20AJND.AtualizarCDs": "Trocar a CD escrita nos textos de poderes, magias e armas",
   "T20AJND.AtualizarNivelConjurador": "Atualizar o nível de conjurador escrito nas magias (\"como um clérigo de 10º nível\" passa a usar o ND)",
   "T20AJND.ChefeFinal": "Chefe Final (PV ×2, PM +2×ND, RD por patamar e o poder Maior que a Morte)",
+  "T20AJND.Enxame": "Enxame (dano automático no lugar dos ataques, poderes e imunidades do enxame)",
   "T20AJND.Templates": "Templates",
   "T20AJND.Patamar": "Patamar de ND",
   "T20AJND.Sugestoes": "Sugestões de círculos de magia",
@@ -49,6 +50,8 @@
   "T20AJND.Novidade040Conjurador": "Nível de conjurador nos textos: \"lança magias como um clérigo de 10º nível\" passa a usar o ND de destino como nível, mantendo a classe.",
   "T20AJND.Novidade040Circulos": "A prévia sugere círculos de magia liberados (ou acima do permitido) pelo novo nível. Nada é adicionado à ficha.",
   "T20AJND.Novidade040Boasvindas": "Esta mensagem de boas-vindas e de novidades, enviada só ao Mestre.",
+  "T20AJND.Novidade070Enxame": "Template Enxame: zera os ataques das armas, cria o poder Enxame (dano automático) e os poderes e imunidades do enxame. Dá para marcar junto com o Chefe Final.",
+  "T20AJND.Novidade070Nome": "A cópia criada com um template leva só a tag dele no nome, por exemplo \"Sacerdote da Tormenta (Chefe Final)\". O aviso de limite de ataques ficou mais curto.",
   "T20AJND.Novidade060ChefeFinal": "Template Chefe Final: PV ×2, PM +2×ND, RD mínima por patamar (Veterano 5, Campeão 10, Lenda 20) e o poder Maior que a Morte. Dá para marcar e desmarcar quando quiser: a ficha volta ao estado anterior.",
   "T20AJND.Novidade050Patamar": "Avisos de patamar na prévia: ao mudar de Iniciante, Veterano, Campeão ou Lenda, mostra o limite de ataques por rodada e a faixa de poderes sugerida para o papel. Nada é alterado na ficha."
 }

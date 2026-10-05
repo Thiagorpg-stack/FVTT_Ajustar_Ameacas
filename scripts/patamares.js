@@ -27,7 +27,7 @@ export function avisosDePatamar({ ndAntes, ndDepois, papel, ataques, poderes, fa
 
   if (mudou) {
     avisos.push(`Patamar: ${antes} → ${depois}.`);
-    avisos.push(`Ataques por rodada: até ${maxAtaques(ndDepois)} (a ficha tem ${ataques}).`);
+    if (ataques !== null) avisos.push(`Ataques por rodada: até ${maxAtaques(ndDepois)} (a ficha tem ${ataques}).`);
   }
 
   const rotulo = ROTULOS_PAPEL[papel] ?? papel;

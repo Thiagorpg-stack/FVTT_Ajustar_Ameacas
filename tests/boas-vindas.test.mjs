@@ -65,3 +65,8 @@ test('a v0.6.0 anuncia o template Chefe Final', () => {
   assert.equal(decidirMensagem('0.5.0', '0.6.0'), 'novidades');
   assert.match(montarMensagem('novidades', '0.6.0', t), /Chefe Final/);
 });
+
+test('a v0.7.0 anuncia o template Enxame', () => {
+  assert.equal(decidirMensagem('0.6.0', '0.7.0'), 'novidades');
+  assert.match(montarMensagem('novidades', '0.7.0', t), /Enxame/);
+});
