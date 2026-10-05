@@ -29,5 +29,21 @@
   "T20AJND.ManterProporcao": "Manter a proporção de dano entre as armas (a que causa mais dano continua causando mais)",
   "T20AJND.TotalRodada": "Dano médio por rodada",
   "T20AJND.De": "de",
-  "T20AJND.AtaquesTotal": "ataques por rodada"
+  "T20AJND.AtaquesTotal": "ataques por rodada",
+  "T20AJND.BoasVindasTitulo": "Tormenta20: Ajustar ND",
+  "T20AJND.BoasVindasIntro": "Ajusta uma ameaça do Tormenta20 para qualquer ND e papel, seguindo a tabela de parâmetros de ameaças:",
+  "T20AJND.BoasVindasAbrirTitulo": "Abrir o ajuste",
+  "T20AJND.BoasVindasAbrir": "Clique em \"Ajustar ND\" no cabeçalho da ficha de uma ameaça ou use o botão direito sobre ela no diretório de Atores.",
+  "T20AJND.BoasVindasAjustaTitulo": "O que ele ajusta",
+  "T20AJND.BoasVindasAjusta": "PV, CD, Defesa, bônus de ataque, resistências (Fortitude, Reflexos e Vontade) e o dano por rodada das armas, de acordo com o ND e o papel (Solo, Lacaio ou Especial).",
+  "T20AJND.BoasVindasPreviaTitulo": "Prévia e cópia",
+  "T20AJND.BoasVindasPrevia": "Antes de aplicar você vê cada valor antes e depois. Por padrão o ajuste cria uma cópia da ameaça e não altera o original.",
+  "T20AJND.BoasVindasOpcoesTitulo": "Opções",
+  "T20AJND.BoasVindasOpcoes": "Manter a proporção de dano entre as armas, trocar a CD e o nível de conjurador escritos nos textos, atualizar as linhas de ataque e escolher quantos ataques cada arma faz por rodada.",
+  "T20AJND.BoasVindasMestreTitulo": "Só para o Mestre",
+  "T20AJND.BoasVindasMestre": "O botão aparece apenas para o Mestre, e esta mensagem só aparece para você.",
+  "T20AJND.NovidadesTitulo": "Novidades da versão",
+  "T20AJND.Novidade040Conjurador": "Nível de conjurador nos textos: \"lança magias como um clérigo de 10º nível\" passa a usar o ND de destino como nível, mantendo a classe.",
+  "T20AJND.Novidade040Circulos": "A prévia sugere círculos de magia liberados (ou acima do permitido) pelo novo nível. Nada é adicionado à ficha.",
+  "T20AJND.Novidade040Boasvindas": "Esta mensagem de boas-vindas e de novidades, enviada só ao Mestre."
 }

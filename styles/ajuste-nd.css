@@ -20,3 +20,9 @@
 .t20-ajuste-nd .ajuste-nd__revisar { border-left: 3px solid #1565c0; padding-left: 0.5rem; }
 .t20-ajuste-nd .ajuste-nd__rodape { display: flex; justify-content: flex-end; gap: 0.5rem; }
 .t20-ajuste-nd .ajuste-nd__textos { border-left: 3px solid #2e7d32; padding-left: 0.5rem; }
+
+/* Mensagem de boas-vindas no chat (fora da janela do diálogo). */
+.t20-ajuste-nd-chat h3 { margin: 0 0 0.4rem; }
+.t20-ajuste-nd-chat ul { margin: 0.4rem 0 0; padding: 0; list-style: none; }
+.t20-ajuste-nd-chat li { margin-bottom: 0.4rem; }
+.t20-ajuste-nd-chat li i { width: 1.2em; text-align: center; opacity: 0.8; }

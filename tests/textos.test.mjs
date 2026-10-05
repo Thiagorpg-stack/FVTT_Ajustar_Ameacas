@@ -7,7 +7,7 @@ const textos = JSON.parse(ler('lang/pt-BR.json'));
 const manifesto = JSON.parse(ler('module.json'));
 
 test('toda chave T20AJND usada no template, nos scripts e no módulo existe no arquivo de textos', () => {
-  const fontes = ['templates/dialogo.hbs', 'scripts/main.js', 'scripts/dialogo.js'].map(ler).join('\n');
+  const fontes = ['templates/dialogo.hbs', 'scripts/main.js', 'scripts/dialogo.js', 'scripts/boas-vindas.js'].map(ler).join('\n');
   const usadas = new Set(fontes.match(/T20AJND\.\w+/g));
   const faltando = [...usadas].filter(chave => !(chave in textos));
   assert.deepEqual(faltando, []);
