@@ -31,11 +31,12 @@ Não alteram: atributos, efeitos ativos e o conteúdo de poderes e magias (poder
 
 ## Templates
 
-Marque na prévia. Cada template marcado grava um marcador no ator com o estado original, e os itens que cria levam uma flag do módulo. Reaplicar não duplica nada, e desmarcar devolve a ficha ao que era. Com template, o nome da cópia leva só a tag ("Nome (Chefe Final)").
+Marque na prévia; os três podem ser combinados. Cada template marcado grava um marcador no ator com o estado original, e os itens que cria levam uma flag do módulo. Reaplicar não duplica nada, e desmarcar devolve a ficha ao que era. Com template, o nome da cópia leva só a tag ("Nome (Chefe Final)").
 
 | Template | O que faz |
 |---|---|
 | Chefe Final | PV ×2; PM + 2×ND (só quem já tem PM); RD mínima por patamar (Veterano 5, Campeão 10, Lenda 20, gravada em `tracos.resistencias.dano.base` e no texto de resistências); poder **Maior que a Morte**. XP de ND + 2 (nota na prévia). |
+| Bando | O grupo é tratado como uma criatura de **ND maior**: o ND efetivo sobe pelo aumento da escala de indivíduos (10-20 e 20-40: +2; 50-70: +4; 80-100: +6; editável) e PV, ataque, defesa, CD e resistências vêm da linha desse ND (a ficha mostra o ND do bando; o ND de destino do diálogo é o da criatura individual). O tamanho sobe 1, 2, 3 ou 4 categorias conforme a escala (até Colossal). O dano dos golpes é multiplicado (×2, ×4 ou ×6, conforme os patamares que o ND subiu) e escrito como `(fórmula) * N`; cada golpe é balanceado contra o dano da tabela dividido pelo multiplicador. Cria os poderes Dano Esmagador, Dano Inescapável e Ataques Adicionais contra o Bando e acrescenta as imunidades (texto e `tracos.ic.custom`). |
 | Enxame | Zera os ataques das armas (elas não são apagadas); cria o poder **Enxame** (dano automático com a média do dano do ND) e os poderes Movimentação Tática, Resistência a Armas, Vulnerabilidade a Área e Interações Mágicas; troca a linha de Corpo a Corpo pelo ataque do enxame; acrescenta as imunidades ao texto de resistências e a `tracos.ic.custom`. |
 
 ## Mensagem no chat

@@ -33,6 +33,44 @@ const IMUNIDADES_ENXAME = [
 // Nenhuma dessas imunidades é uma condição fixa do sistema (tracos.ic.value); vão no texto livre ic.custom.
 const ROTULOS_IC_ENXAME = ['Acertos críticos', 'Dano de precisão', 'Flanqueamento', 'Manobras de combate'];
 
+const PODERES_BANDO = [
+  ['Dano Esmagador', 'Se um ataque do bando exceder a Defesa do inimigo por 10 ou mais, ele causa o dobro do dano.'],
+  ['Dano Inescapável', 'Se um ataque do bando errar, ele ainda assim causa metade do dano.'],
+  ['Ataques Adicionais contra o Bando', 'Um personagem com o poder Trespassar que acerte a criatura pode usá-lo para fazer um ataque adicional contra ela. Contudo, isso é limitado a apenas uma vez por turno.'],
+];
+const TERMOS_BANDO = [
+  'imunidade a manobras de combate',
+  'imunidade a efeitos que afetam apenas uma criatura e não causam dano',
+  'vulnerabilidade a dano de área',
+];
+const ROTULOS_IC_BANDO = ['Manobras de combate', 'Efeitos de alvo único sem dano'];
+
+const ORDEM_ND = ['1/4', '1/2', ...Array.from({ length: 20 }, (_, i) => String(i + 1)), 'S', 'S+'];
+const ORDEM_PATAMARES = ['Iniciante', 'Veterano', 'Campeão', 'Lenda'];
+const ORDEM_TAMANHOS = ['min', 'peq', 'med', 'gra', 'eno', 'col'];
+const NOMES_TAMANHO = { min: 'Minúsculo', peq: 'Pequeno', med: 'Médio', gra: 'Grande', eno: 'Enorme', col: 'Colossal' };
+// Escala do bando (indivíduos): quanto o ND e o tamanho sobem. O ND pode ser editado pelo mestre.
+const ESCALAS_BANDO = {
+  '10-20': { aumento: 2, tamanho: 1 },
+  '20-40': { aumento: 2, tamanho: 2 },
+  '50-70': { aumento: 4, tamanho: 3 },
+  '80-100': { aumento: 6, tamanho: 4 },
+};
+const MULTIPLICADOR_POR_PATAMAR = { 1: 2, 2: 4, 3: 6 };
+
+export const aumentoPadrao = (escala) => ESCALAS_BANDO[escala]?.aumento ?? 2;
+
+// O bando é tratado como uma criatura de ND maior: o ND efetivo sobe `aumentoND`, o tamanho sobe pela escala
+// (até Colossal) e o dano dos golpes é multiplicado conforme os patamares que o ND subiu.
+export function resolverBando({ nd, tamanho, bando }) {
+  const posicao = ORDEM_ND.findIndex(n => valorND(n) === valorND(nd));
+  const ndEfetivo = ORDEM_ND[Math.min(Math.max(posicao, 0) + (Number(bando.aumentoND) || 0), ORDEM_ND.length - 1)];
+  const sobeTamanho = ESCALAS_BANDO[bando.escala]?.tamanho ?? 1;
+  const novoTamanho = ORDEM_TAMANHOS[Math.min(Math.max(ORDEM_TAMANHOS.indexOf(tamanho), 0) + sobeTamanho, ORDEM_TAMANHOS.length - 1)];
+  const diferenca = ORDEM_PATAMARES.indexOf(patamarDoND(ndEfetivo)) - ORDEM_PATAMARES.indexOf(patamarDoND(nd));
+  return { ndEfetivo, tamanho: novoTamanho, mult: MULTIPLICADOR_POR_PATAMAR[diferenca] ?? 1 };
+}
+
 const CARACTERES_ID = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 export const idAleatorio = () =>
   Array.from({ length: 16 }, () => CARACTERES_ID[Math.floor(Math.random() * CARACTERES_ID.length)]).join('');
@@ -110,23 +148,27 @@ function mesclarRotulos(existente, novos) {
 // ataque), para o resto do cálculo trabalhar sobre a ficha como ela era antes do template.
 export function restaurarDados(dados) {
   const marcador = lerMarcador(dados);
-  if (!marcador?.ativos?.includes('enxame') || !marcador.base) return dados;
+  const enxame = marcador?.ativos?.includes('enxame');
+  const bando = marcador?.ativos?.includes('bando');
+  if (!(enxame || bando) || !marcador.base) return dados;
   const copia = structuredClone(dados);
   for (const item of copia.items) {
-    if (marcador.base.ataques && item._id in marcador.base.ataques) item.system.ataques = marcador.base.ataques[item._id];
+    if (enxame && marcador.base.ataques && item._id in marcador.base.ataques) item.system.ataques = marcador.base.ataques[item._id];
+    if (bando && marcador.base.rolls && item._id in marcador.base.rolls) item.system.rolls = structuredClone(marcador.base.rolls[item._id]);
   }
-  if (marcador.base.ataquescac !== undefined) copia.system.detalhes.ataquescac = marcador.base.ataquescac;
+  if (enxame && marcador.base.ataquescac !== undefined) copia.system.detalhes.ataquescac = marcador.base.ataquescac;
   return copia;
 }
 
 // Calcula o que os templates marcados mudam na ficha. Sempre parte do estado base: o do marcador, se
 // a ficha já passou por aqui, ou o atual. Devolve valores absolutos (nunca "soma ao que já está").
-export function aplicarTemplates({ dados, nd, ativos = {}, danoND, gerarId = idAleatorio }) {
+// `nd` é o ND efetivo (o do bando, quando há Bando); `bando` é o resultado de resolverBando mais a configuração.
+export function aplicarTemplates({ dados, nd, ativos = {}, bando = null, danoND, gerarId = idAleatorio }) {
   const marcador = lerMarcador(dados);
   const chefe = Boolean(ativos.chefeFinal);
   const enxame = Boolean(ativos.enxame);
   const vazio = { update: {}, itensCriar: [], itensRemover: [], linhas: [], notas: [] };
-  if (!chefe && !enxame && !marcador) return vazio;
+  if (!chefe && !enxame && !bando && !marcador) return vazio;
 
   const sys = dados.system;
   const rdDados = sys.tracos.resistencias.dano;
@@ -138,6 +180,8 @@ export function aplicarTemplates({ dados, nd, ativos = {}, danoND, gerarId = idA
     ataques: Object.fromEntries(dados.items.filter(i => i.type === 'arma').map(i => [i._id, i.system.ataques ?? 0])),
     ataquescac: sys.detalhes.ataquescac ?? '',
     icCustom: sys.tracos.ic?.custom ?? '',
+    tamanho: sys.tracos.tamanho,
+    rolls: Object.fromEntries(dados.items.filter(i => i.type === 'arma').map(i => [i._id, structuredClone(i.system.rolls)])),
   };
   const base = { ...atuais, ...marcador?.base };
 
@@ -162,14 +206,31 @@ export function aplicarTemplates({ dados, nd, ativos = {}, danoND, gerarId = idA
   // Texto de resistências: o original, mais as imunidades do Enxame, mais a RD do Chefe Final.
   let texto = base.resistenciasTexto;
   if (enxame) texto = textoComTermos(texto, IMUNIDADES_ENXAME);
+  if (bando) texto = textoComTermos(texto, TERMOS_BANDO);
   if (bonusRD > 0) texto = textoComRD(texto, rd);
   if (marcador || texto !== (sys.detalhes.resistencias ?? '')) update['system.detalhes.resistencias'] = texto;
   if (chefe && rd !== rdAtual(rdDados)) linhas.push({ rotulo: 'RD', antes: rdAtual(rdDados), depois: rd });
 
+  const rotulosIC = [...(enxame ? ROTULOS_IC_ENXAME : []), ...(bando ? ROTULOS_IC_BANDO : [])];
+  const tinhaIC = marcador?.ativos?.some(a => a === 'enxame' || a === 'bando');
+  if (rotulosIC.length) update['system.tracos.ic.custom'] = mesclarRotulos(base.icCustom, rotulosIC);
+  else if (tinhaIC && marcador.base?.icCustom !== undefined) update['system.tracos.ic.custom'] = marcador.base.icCustom;
+
+  if (bando) {
+    linhas.push({ rotulo: 'ND do bando', antes: bando.ndIndividual, depois: bando.ndEfetivo });
+    if (bando.tamanho !== base.tamanho) {
+      linhas.push({ rotulo: 'Tamanho', antes: NOMES_TAMANHO[base.tamanho] ?? base.tamanho, depois: NOMES_TAMANHO[bando.tamanho] ?? bando.tamanho });
+    }
+    linhas.push({ rotulo: 'Dano do bando', antes: '×1', depois: `×${bando.mult}` });
+    notas.push(`Bando: PV, ataque, defesa, CD e resistências do ND ${bando.ndEfetivo} (o ND ${bando.ndIndividual} com +${bando.aumentoND}); dano dos golpes ×${bando.mult}.`);
+    for (const [nome, descricao] of PODERES_BANDO) {
+      itensCriar.push(criarPoder({ id: gerarId(), nome, descricao, origem: 'bando' }));
+    }
+  }
+
   if (enxame) {
     const formula = formulaParaMedia(danoND);
     update['system.detalhes.ataquescac'] = `Enxame (${formula}). ${DESCRICAO_ENXAME}`;
-    update['system.tracos.ic.custom'] = mesclarRotulos(base.icCustom, ROTULOS_IC_ENXAME);
     itensCriar.push(criarPoder({
       id: gerarId(), nome: 'Enxame', descricao: DESCRICAO_ENXAME, origem: 'enxame',
       rolls: [{ name: 'Dano', key: 'dano0', type: 'dano', parts: [[formula, 'dano', '']], versatil: '', adaptavel: '' }],
@@ -178,8 +239,6 @@ export function aplicarTemplates({ dados, nd, ativos = {}, danoND, gerarId = idA
       itensCriar.push(criarPoder({ id: gerarId(), nome, descricao, origem: 'enxame' }));
     }
     notas.push(`Enxame: dano automático de ${formula} (média ${mediaFormula(formula)}) no lugar dos ataques das armas, que ficam com 0 ataques.`);
-  } else if (marcador?.base?.icCustom !== undefined) {
-    update['system.tracos.ic.custom'] = marcador.base.icCustom;
   }
 
   if (chefe) {
@@ -193,11 +252,13 @@ export function aplicarTemplates({ dados, nd, ativos = {}, danoND, gerarId = idA
 
   // O marcador guarda só o que os templates marcados alteram; o do Enxame inclui ataques e textos.
   const guardada = { pmMax: base.pmMax, pmValue: base.pmValue, rdBase: base.rdBase, resistenciasTexto: base.resistenciasTexto };
-  if (enxame) Object.assign(guardada, { ataques: base.ataques, ataquescac: base.ataquescac, icCustom: base.icCustom });
-  const ativosMarcados = ['enxame', 'chefeFinal'].filter(chave => ativos[chave]);
-  update[`flags.${FLAG}.templates`] = ativosMarcados.length
-    ? { ativos: ativosMarcados, base: guardada }
-    : { ativos: [], base: null };
+  if (enxame) Object.assign(guardada, { ataques: base.ataques, ataquescac: base.ataquescac });
+  if (bando) Object.assign(guardada, { tamanho: base.tamanho, rolls: base.rolls });
+  if (enxame || bando) guardada.icCustom = base.icCustom;
+  const ativosMarcados = ['bando', 'enxame', 'chefeFinal'].filter(chave => (chave === 'bando' ? bando : ativos[chave]));
+  const novoMarcador = ativosMarcados.length ? { ativos: ativosMarcados, base: guardada } : { ativos: [], base: null };
+  if (bando) novoMarcador.bando = { escala: bando.escala, aumentoND: bando.aumentoND, ndIndividual: bando.ndIndividual };
+  update[`flags.${FLAG}.templates`] = novoMarcador;
 
   return {
     update,

@@ -8,7 +8,7 @@ import {
 } from './textos.js';
 import { nivelDoND, sugerirCirculos } from './circulos.js';
 import { faixaDeHabilidades, avisosDePatamar } from './patamares.js';
-import { aplicarTemplates, ehItemDeTemplate, idAleatorio, lerMarcador, restaurarDados } from './templates.js';
+import { aplicarTemplates, ehItemDeTemplate, idAleatorio, lerMarcador, resolverBando, restaurarDados } from './templates.js';
 
 const NUMERO = /^[+-]?\d+(\.\d+)?$/;
 const TIPOS_COM_CD = ['poder', 'magia', 'arma'];
@@ -60,20 +60,32 @@ export function calcularAjuste({
   const antes = medir({});
   const armas = lerArmas(dados.items, dados.system.detalhes.ataquescac ?? '');
   if (templates.enxame) ataquesPorArma = Object.fromEntries(armas.map(a => [a.id, 0]));
+  // Bando: o ND da tabela é o efetivo (o individual mais o aumento) e o tamanho sobe pela escala.
+  const marcador = lerMarcador(dadosReais);
+  const tamanhoBase = (marcador?.ativos?.includes('bando') ? marcador.base?.tamanho : undefined) ?? dados.system.tracos.tamanho;
+  const bando = templates.bando
+    ? { ...templates.bando, ...resolverBando({ nd, tamanho: tamanhoBase, bando: templates.bando }), ndIndividual: nd }
+    : null;
+  const ndTabela = bando?.ndEfetivo ?? nd;
+  const mult = bando?.mult ?? 1;
   const plano = planejarAjuste({
-    tabelas, papel, nd, armas, itens: dados.items,
+    tabelas, papel, nd: ndTabela, multiplicadorDano: mult, armas, itens: dados.items,
     totais: { fort: antes.pericias.fort, refl: antes.pericias.refl, vont: antes.pericias.vont },
     ataquesPorArma, alternativas, ordemResistencias, manterProporcao,
   });
   const { alvos } = plano;
 
   const update = {
-    'system.attributes.nd': normalizarND(nd),
+    'system.attributes.nd': normalizarND(ndTabela),
     'system.detalhes.role': papel,
     'system.attributes.pv.max': alvos.pv * (templates.chefeFinal ? 2 : 1),
     'system.attributes.pv.value': alvos.pv * (templates.chefeFinal ? 2 : 1),
     'system.attributes.cd': alvos.cd,
   };
+
+  // O tamanho entra antes da calibração: o sistema soma o modificador de tamanho em algumas perícias.
+  if (bando) update['system.tracos.tamanho'] = bando.tamanho;
+  else if (marcador?.ativos?.includes('bando')) update['system.tracos.tamanho'] = tamanhoBase;
 
   const alvosPericias = { ...plano.resistencias };
   for (const arma of armas) alvosPericias[arma.pericia] = alvos.ataque;
@@ -89,10 +101,11 @@ export function calcularAjuste({
     const item = dados.items.find(i => i._id === arma.id);
     const ataques = ataquesPorArma[arma.id] ?? arma.ataques;
     const formula = ataques > 0 ? plano.dano?.porArma[arma.id]?.formula : undefined;
+    const formulaFinal = formula !== undefined && mult > 1 ? `(${formula}) * ${mult}` : formula;
     return {
       _id: arma.id,
       'system.ataques': ataques,
-      'system.rolls': reescreverRolls(item.system.rolls, { indiceRollDano: arma.indiceRollDano, formula }),
+      'system.rolls': reescreverRolls(item.system.rolls, { indiceRollDano: arma.indiceRollDano, formula: formulaFinal }),
     };
   });
 
@@ -136,7 +149,9 @@ export function calcularAjuste({
     const armasNoTexto = armas.map((arma) => ({
       nome: arma.nome,
       ataque: alvos.ataque,
-      formula: (ataquesPorArma[arma.id] ?? arma.ataques) > 0 ? plano.dano?.porArma[arma.id]?.formula : undefined,
+      formula: (ataquesPorArma[arma.id] ?? arma.ataques) > 0
+        ? [plano.dano?.porArma[arma.id]?.formula, mult > 1 ? ` ×${mult}` : ''].join('')
+        : undefined,
     }));
     for (const campo of CAMPOS_DE_ATAQUE) {
       const antesTexto = dados.system.detalhes[campo];
@@ -157,15 +172,15 @@ export function calcularAjuste({
   }));
   const patamar = avisosDePatamar({
     ndAntes: dados.system.attributes.nd,
-    ndDepois: nd,
+    ndDepois: ndTabela,
     papel,
     ataques: templates.enxame ? null : totalAtaques(armasFinais.filter(a => a.ataques > 0)),
     poderes: dados.items.filter(i => i.type === 'poder' && !ehItemDeTemplate(i)).length,
-    faixa: faixaDeHabilidades(tabelas, papel, nd),
+    faixa: faixaDeHabilidades(tabelas, papel, ndTabela),
   });
 
   // Templates (Chefe Final...): PM, RD e itens próprios; sempre calculados a partir do estado base.
-  const modelo = aplicarTemplates({ dados: dadosReais, nd, ativos: templates, danoND: plano.linha.Dano, gerarId });
+  const modelo = aplicarTemplates({ dados: dadosReais, nd: ndTabela, ativos: templates, bando, danoND: plano.linha.Dano, gerarId });
   Object.assign(update, modelo.update);
   // Sem o Enxame, a linha de ataque original tem de voltar mesmo que o texto novo seja igual a ela.
   const eraEnxame = lerMarcador(dadosReais)?.ativos?.includes('enxame');
@@ -176,6 +191,6 @@ export function calcularAjuste({
   return {
     plano, update, itemUpdates, antes, depois, avisos, textos, sugestoes, patamar,
     itensCriar: modelo.itensCriar, itensRemover: modelo.itensRemover,
-    templates: { linhas: modelo.linhas, notas: modelo.notas },
+    templates: { linhas: modelo.linhas, notas: modelo.notas, multDano: mult },
   };
 }

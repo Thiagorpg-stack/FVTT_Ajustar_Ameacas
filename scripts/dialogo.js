@@ -2,7 +2,7 @@
 import { lerArmas, ordenarResistencias } from './calculo.js';
 import { mediaFormula } from './dano.js';
 import { aplicarAjuste, criarMedidor, simular, ID_MODULO } from './aplicar.js';
-import { lerMarcador } from './templates.js';
+import { aumentoPadrao, lerMarcador, restaurarDados } from './templates.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -10,6 +10,7 @@ const NDS = ['1/4', '1/2', ...Array.from({ length: 20 }, (_, i) => String(i + 1)
 const PAPEIS = [['solo', 'Solo'], ['lackey', 'Lacaio'], ['special', 'Especial']];
 const TESTES = { fort: 'Fortitude', refl: 'Reflexos', vont: 'Vontade' };
 const PERICIAS_ATAQUE = { luta: 'Luta', pont: 'Pontaria' };
+const ESCALAS_BANDO = ['10-20', '20-40', '50-70', '80-100'];
 const SELOS = { equilibrado: 'Equilibrado', alto: 'Alto', baixo: 'Baixo' };
 
 export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -27,9 +28,12 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     this.actor = actor;
     this.resultado = null;
 
-    const dados = actor.toObject();
+    // Ficha como era antes dos templates (ataques do Enxame e fórmulas do Bando de volta ao original).
+    const dados = restaurarDados(actor.toObject());
+    const marcador = lerMarcador(dados);
     const armas = lerArmas(dados.items, dados.system.detalhes.ataquescac ?? '');
-    const nd = String(dados.system.attributes.nd).trim();
+    // Com Bando, a ficha mostra o ND do bando; o ND de destino do diálogo é o da criatura individual.
+    const nd = String(marcador?.ativos?.includes('bando') ? marcador.bando?.ndIndividual : dados.system.attributes.nd).trim();
     const papel = dados.system.detalhes.role;
     this.estado = {
       nd: NDS.includes(nd) ? nd : '1',
@@ -41,6 +45,9 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       manterProporcao: true,
       chefeFinal: lerMarcador(dados)?.ativos?.includes('chefeFinal') ?? false,
       enxame: lerMarcador(dados)?.ativos?.includes('enxame') ?? false,
+      bando: marcador?.ativos?.includes('bando') ?? false,
+      bandoEscala: marcador?.bando?.escala ?? '10-20',
+      bandoAumento: marcador?.bando?.aumentoND ?? aumentoPadrao('10-20'),
       ataques: Object.fromEntries(armas.map(a => [a.id, a.ataques])),
       alternativas: {},
       ordem: ordenarResistencias(criarMedidor(actor)().pericias),
@@ -64,6 +71,9 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       manterProporcao: e.manterProporcao,
       chefeFinal: e.chefeFinal,
       enxame: e.enxame,
+      bando: e.bando,
+      bandoAumento: e.bandoAumento,
+      escalas: ESCALAS_BANDO.map(valor => ({ valor, selecionado: valor === e.bandoEscala })),
       erro: null, linhas: [], armas: [], avisos: [], revisar: [], sugestoes: [], patamar: [], notasTemplates: [], selo: null, ordem: [],
     };
     contexto.ordem = ['Forte', 'Média', 'Fraca'].map((rotulo, i) => ({
@@ -83,7 +93,11 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
         alternativas: e.alternativas, ordemResistencias: e.ordem,
         atualizarCDs: e.atualizarCDs, atualizarTextoAtaques: e.atualizarTextoAtaques,
         atualizarNivelConjurador: e.atualizarNivelConjurador, manterProporcao: e.manterProporcao,
-        templates: { chefeFinal: e.chefeFinal, enxame: e.enxame },
+        templates: {
+          chefeFinal: e.chefeFinal,
+          enxame: e.enxame,
+          bando: e.bando ? { escala: e.bandoEscala, aumentoND: e.bandoAumento } : null,
+        },
       });
     } catch (erro) {
       console.error(`${ID_MODULO} |`, erro);
@@ -95,7 +109,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   #montarPrevia(r) {
-    const dados = this.actor.toObject();
+    const dados = restaurarDados(this.actor.toObject());
     const sys = dados.system;
     const linha = (rotulo, antes, depois) => ({ rotulo, antes, depois, mudou: antes !== depois });
 
@@ -120,7 +134,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
         id: arma.id, nome: arma.nome, ataques,
         alternativa: !!this.estado.alternativas[arma.id],
         antes, depois,
-        mediaDepois: depois && mediaFormula(depois) !== null ? mediaFormula(depois) : null,
+        mediaDepois: depois ? this.#mediaDoGolpe(r, arma.id, depois) : null,
       };
     });
 
@@ -129,7 +143,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     const somaCompartilhadas = ativas.filter(a => !a.alternativa).reduce((s, a) => s + a.ataques, 0);
     const maiorAlternativa = Math.max(0, ...ativas.filter(a => a.alternativa).map(a => a.ataques));
     const rodada = grupos.length ? {
-      obtido: Number(Math.max(...grupos.map(g => g.obtido)).toFixed(1)),
+      obtido: Number((Math.max(...grupos.map(g => g.obtido)) * r.templates.multDano).toFixed(1)),
       alvo: r.plano.linha.Dano,
       ataques: somaCompartilhadas + maiorAlternativa,
     } : null;
@@ -141,6 +155,13 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       rodada,
       selo: pior ? { alerta: pior.alerta, texto: SELOS[pior.alerta] } : null,
     };
+  }
+
+  // Média do golpe já com o multiplicador do bando (a fórmula escrita na ficha é "(fórmula) * N").
+  #mediaDoGolpe(r, idArma, escrita) {
+    const simples = r.plano.dano?.porArma[idArma]?.formula;
+    const media = mediaFormula(simples ?? escrita);
+    return media === null ? null : media * r.templates.multDano;
   }
 
   #montarTextos(textos) {
@@ -172,6 +193,14 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     e.manterProporcao = el.querySelector('[name=manterProporcao]').checked;
     e.chefeFinal = el.querySelector('[name=chefeFinal]').checked;
     e.enxame = el.querySelector('[name=enxame]').checked;
+    e.bando = el.querySelector('[name=bando]').checked;
+    const escala = el.querySelector('[name=bandoEscala]').value;
+    if (escala !== e.bandoEscala) {
+      e.bandoEscala = escala;
+      e.bandoAumento = aumentoPadrao(escala);
+    } else {
+      e.bandoAumento = Math.max(0, parseInt(el.querySelector('[name=bandoAumento]').value, 10) || 0);
+    }
     el.querySelectorAll('[data-ataques]').forEach((c) => {
       e.ataques[c.dataset.ataques] = Math.max(0, parseInt(c.value, 10) || 0);
     });

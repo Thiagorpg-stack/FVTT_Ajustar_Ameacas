@@ -70,3 +70,8 @@ test('a v0.7.0 anuncia o template Enxame', () => {
   assert.equal(decidirMensagem('0.6.0', '0.7.0'), 'novidades');
   assert.match(montarMensagem('novidades', '0.7.0', t), /Enxame/);
 });
+
+test('a v0.8.0 anuncia o template Bando', () => {
+  assert.equal(decidirMensagem('0.7.0', '0.8.0'), 'novidades');
+  assert.match(montarMensagem('novidades', '0.8.0', t), /Bando/);
+});

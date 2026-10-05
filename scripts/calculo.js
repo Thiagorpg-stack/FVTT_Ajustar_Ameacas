@@ -84,7 +84,7 @@ export const AVISO_SEM_ARMAS = 'Nenhuma arma com ataques por rodada maior que ze
 
 export function planejarAjuste({
   tabelas, papel, nd, totais, armas, itens = [],
-  ataquesPorArma = {}, alternativas = {}, ordemResistencias, manterProporcao = true,
+  ataquesPorArma = {}, alternativas = {}, ordemResistencias, manterProporcao = true, multiplicadorDano = 1,
 }) {
   const linha = consultar(tabelas, papel, nd);
   const armasFinais = armas.map(a => ({
@@ -96,7 +96,8 @@ export function planejarAjuste({
   const avisos = [];
   let dano = null;
   if (armasFinais.some(a => a.ataques > 0)) {
-    dano = balancearDano({ danoAlvo: linha.Dano, armas: armasFinais, manterProporcao });
+    // No Bando cada golpe é multiplicado depois (×2, ×4, ×6), então o alvo de cada arma é a fração do dano da tabela.
+    dano = balancearDano({ danoAlvo: linha.Dano / multiplicadorDano, armas: armasFinais, manterProporcao });
     avisos.push(avisoLimite(armasFinais.filter(a => a.ataques > 0), nd), ...dano.avisos);
   } else {
     avisos.push(AVISO_SEM_ARMAS);

@@ -43,6 +43,18 @@
       <input type="checkbox" name="enxame" {{#if enxame}}checked{{/if}}>
       {{localize "T20AJND.Enxame"}}
     </label>
+    <label class="ajuste-nd__copia">
+      <input type="checkbox" name="bando" {{#if bando}}checked{{/if}}>
+      {{localize "T20AJND.Bando"}}
+    </label>
+    <label>{{localize "T20AJND.BandoEscala"}}
+      <select name="bandoEscala" {{#unless bando}}disabled{{/unless}}>
+        {{#each escalas}}<option value="{{valor}}" {{#if selecionado}}selected{{/if}}>{{valor}}</option>{{/each}}
+      </select>
+    </label>
+    <label>{{localize "T20AJND.BandoAumento"}}
+      <input type="number" name="bandoAumento" min="0" max="12" value="{{bandoAumento}}" {{#unless bando}}disabled{{/unless}}>
+    </label>
   </div>
 
   <fieldset>
