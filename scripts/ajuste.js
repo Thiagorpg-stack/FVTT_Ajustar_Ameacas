@@ -61,7 +61,9 @@ export function calcularAjuste({
   const dados = restaurarDados(dadosReais);
   const antes = medir({});
   const armas = lerArmas(dados.items, dados.system.detalhes.ataquescac ?? '');
-  if (templates.enxame) ataquesPorArma = Object.fromEntries(armas.map(a => [a.id, 0]));
+  // O Enxame sozinho tira as armas da ficha; junto com o Bando elas ficam e são ajustadas como no Bando.
+  const semArmas = Boolean(templates.enxame && !templates.bando);
+  if (semArmas) ataquesPorArma = Object.fromEntries(armas.map(a => [a.id, 0]));
   // Bando: o ND da tabela é o efetivo (o individual mais o aumento) e o tamanho sobe pela escala.
   const marcador = lerMarcador(dadosReais);
   const tamanhoBase = (marcador?.ativos?.includes('bando') ? marcador.base?.tamanho : undefined) ?? dados.system.tracos.tamanho;
@@ -94,13 +96,13 @@ export function calcularAjuste({
 
   const depois = calibrar({ dados, update, alvosPericias, alvoDefesa: alvos.defesa, medir });
 
-  const avisos = plano.avisos.filter(a => !(templates.enxame && a === AVISO_SEM_ARMAS));
+  const avisos = plano.avisos.filter(a => !(semArmas && a === AVISO_SEM_ARMAS));
   if (update[CAMINHO_DEFESA] !== alvos.defesa) {
     avisos.push(`A defesa soma atributo/armadura da ficha: defesa.base ficou ${update[CAMINHO_DEFESA]} para o total ser ${alvos.defesa}.`);
   }
 
   // Com o Enxame as armas saem da ficha: não há o que atualizar nelas.
-  const itemUpdates = (templates.enxame ? [] : armas).map((arma) => {
+  const itemUpdates = (semArmas ? [] : armas).map((arma) => {
     const item = dados.items.find(i => i._id === arma.id);
     const ataques = ataquesPorArma[arma.id] ?? arma.ataques;
     const formula = ataques > 0 ? plano.dano?.porArma[arma.id]?.formula : undefined;
@@ -122,7 +124,7 @@ export function calcularAjuste({
     const classesVistas = new Set();
     const maiorCirculoNaFicha = Math.max(0, ...dados.items
       .filter(i => i.type === 'magia').map(i => Number(i.system.circulo) || 0));
-    for (const item of dados.items.filter(i => TIPOS_COM_CD.includes(i.type) && !(templates.enxame && i.type === 'arma'))) {
+    for (const item of dados.items.filter(i => TIPOS_COM_CD.includes(i.type) && !(semArmas && i.type === 'arma'))) {
       const original = item.system.description?.value;
       let texto = original;
       if (atualizarNivelConjurador) {
@@ -177,7 +179,7 @@ export function calcularAjuste({
     ndAntes: dados.system.attributes.nd,
     ndDepois: ndTabela,
     papel,
-    ataques: templates.enxame ? null : totalAtaques(armasFinais.filter(a => a.ataques > 0)),
+    ataques: semArmas ? null : totalAtaques(armasFinais.filter(a => a.ataques > 0)),
     poderes: dados.items.filter(i => i.type === 'poder' && !ehItemDeTemplate(i)).length,
     faixa: faixaDeHabilidades(tabelas, papel, ndTabela),
   });
@@ -195,8 +197,8 @@ export function calcularAjuste({
     itemUpdates.splice(i, 1);
   }
   // Sem o Enxame, a linha de ataque original tem de voltar mesmo que o texto novo seja igual a ela.
-  const eraEnxame = lerMarcador(dadosReais)?.ativos?.includes('enxame');
-  if (eraEnxame && !templates.enxame && !('system.detalhes.ataquescac' in update)) {
+  const textoGuardado = lerMarcador(dadosReais)?.base?.ataquescac !== undefined;
+  if (textoGuardado && !semArmas && !('system.detalhes.ataquescac' in update)) {
     update['system.detalhes.ataquescac'] = dados.system.detalhes.ataquescac;
   }
 

@@ -170,3 +170,22 @@ test('Bando junto com Enxame: ic.custom não repete rótulos que os dois templat
   const texto = r.update['system.detalhes.resistencias'];
   assert.equal((texto.match(/imunidade a manobras de combate/g) ?? []).length, 1);
 });
+
+test('desmarcar o Bando tira o "×N" das linhas de ataque; reaplicar não acumula "×N ×N"', () => {
+  const f = ficha('sacerdote');
+  const normal = gravarResultado(f, ajustar(f, '10'));
+  const gravada = gravarResultado(f, ajustar(f, '10', bando('50-70', 4), { gerarId: ids }));
+  assert.match(gravada.system.detalhes.ataquescac, /×2/);
+  const reaplicada = gravarResultado(gravada, ajustar(gravada, '10', bando('50-70', 4), { gerarId: ids }));
+  assert.equal((reaplicada.system.detalhes.ataquescac.match(/×2/g) ?? []).length, 2); // um por arma citada
+  assert.doesNotMatch(reaplicada.system.detalhes.ataquescac, /×2 ×2/);
+  const desmarcada = gravarResultado(gravada, ajustar(gravada, '10', {}));
+  assert.equal(desmarcada.system.detalhes.ataquescac, normal.system.detalhes.ataquescac);
+});
+
+test('desmarcar o Bando devolve a linha de ataque original mesmo com a atualização de textos desligada', () => {
+  const f = ficha('sacerdote');
+  const gravada = gravarResultado(f, ajustar(f, '10', bando('50-70', 4), { gerarId: ids }));
+  const desmarcada = gravarResultado(gravada, ajustar(gravada, '10', {}, { atualizarTextoAtaques: false }));
+  assert.equal(desmarcada.system.detalhes.ataquescac, f.system.detalhes.ataquescac);
+});

@@ -71,6 +71,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       manterProporcao: e.manterProporcao,
       chefeFinal: e.chefeFinal,
       enxame: e.enxame,
+      semArmas: e.enxame && !e.bando,
       bando: e.bando,
       bandoAumento: e.bandoAumento,
       escalas: ESCALAS_BANDO.map(valor => ({ valor, selecionado: valor === e.bandoEscala })),
@@ -126,14 +127,15 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const linhasArmas = armas.map((arma) => {
       const item = dados.items.find(i => i._id === arma.id);
-      const ataques = this.estado.enxame ? 0 : (this.estado.ataques[arma.id] ?? arma.ataques);
+      const semArmas = this.estado.enxame && !this.estado.bando;
+      const ataques = semArmas ? 0 : (this.estado.ataques[arma.id] ?? arma.ataques);
       const antes = item.system.rolls[arma.indiceRollDano].parts[0][0];
       const novo = r.armasUpdates.find(u => u._id === arma.id)?.['system.rolls'][arma.indiceRollDano].parts[0][0];
       const depois = ataques > 0 && novo !== undefined ? novo : null;
       return {
         id: arma.id, nome: arma.nome, ataques,
         alternativa: !!this.estado.alternativas[arma.id],
-        removida: this.estado.enxame,
+        removida: semArmas,
         antes, depois,
         mediaDepois: depois ? this.#mediaDoGolpe(r, arma.id, depois) : null,
       };
