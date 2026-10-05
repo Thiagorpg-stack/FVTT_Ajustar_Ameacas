@@ -21,11 +21,14 @@ export const idAleatorio = () =>
 
 const ROTULOS_TEMPLATE = { bando: 'Bando', enxame: 'Enxame', chefeFinal: 'Chefe Final' };
 
-// Nome da cópia: "Nome (ND 10, Chefe Final)". Troca o sufixo "(ND ...)" de um ajuste anterior em vez de empilhar.
+// Nome da cópia: "Nome (ND 10)" ou, com template, só as tags do template: "Nome (Chefe Final)".
+// Troca o sufixo de um ajuste anterior ("(ND ...)" ou "(Chefe Final)") em vez de empilhar.
 export function nomeDaCopia(nome, nd, ativos = []) {
-  const base = nome.replace(/\s*\(ND [^)]*\)\s*$/, '');
+  const rotulos = Object.values(ROTULOS_TEMPLATE).join('|');
+  const sufixoAnterior = new RegExp(`\\s*\\((?:ND [^)]*|(?:${rotulos})(?:, (?:${rotulos}))*)\\)\\s*$`);
+  const base = nome.replace(sufixoAnterior, '');
   const tags = Object.keys(ROTULOS_TEMPLATE).filter(chave => ativos.includes(chave)).map(chave => ROTULOS_TEMPLATE[chave]);
-  return `${base} (${['ND ' + nd, ...tags].join(', ')})`;
+  return `${base} (${tags.length ? tags.join(', ') : 'ND ' + nd})`;
 }
 
 export const lerMarcador = (dados) => dados.flags?.[FLAG]?.templates ?? null;
