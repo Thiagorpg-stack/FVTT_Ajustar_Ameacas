@@ -20,5 +20,8 @@
   "T20AJND.Revisar": "Para revisar (poderes e magias com dano, não alterados)",
   "T20AJND.AplicarBotao": "Aplicar ajuste",
   "T20AJND.Cancelar": "Cancelar",
-  "T20AJND.Aplicado": "Ajuste aplicado: {nome}"
+  "T20AJND.Aplicado": "Ajuste aplicado: {nome}",
+  "T20AJND.AtualizarCDs": "Trocar a CD escrita nos textos de poderes, magias e armas",
+  "T20AJND.AtualizarAtaques": "Atualizar as linhas de ataque (Corpo a Corpo / À Distância)",
+  "T20AJND.TextosAlterados": "Textos que serão alterados"
 }

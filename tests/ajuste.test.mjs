@@ -124,3 +124,54 @@ for (const nome of nomesDasFichas()) {
     });
   }
 }
+
+test('textos: Centauro Xamã → ND 7 Especial troca a CD escrita no poder Magias e nada mais nele', () => {
+  const c = ficha('centauro');
+  const r = ajustar(c, '7', 'special');
+  const magias = r.itemUpdates.find(u => u._id === 'xL83OWwOqqw80wzl');
+  assert.equal(magias['system.description.value'],
+    'O centauro xamã lança magias como um clérigo de 3º nível (CD 26)');
+  assert.deepEqual(Object.keys(magias).sort(), ['_id', 'system.description.value']);
+  assert.deepEqual(r.textos.cds, [{ nome: 'Magias', antigas: [17], para: 26 }]);
+  assert.equal(r.itemUpdates.some(u => u._id === 'IseSV7ZmgqkbCKMx'), false); // Medo de Altura não tem CD
+});
+
+test('textos: o PM e as magias com dano não são tocados', () => {
+  const r = ajustar(ficha('centauro'), '7', 'special');
+  assert.equal('system.attributes.pm.max' in r.update, false);
+  const ids = new Set(r.itemUpdates.map(u => u._id));
+  for (const nome of ['Controlar Plantas', 'Curar Ferimentos', 'Armamento da Natureza']) {
+    const item = ficha('centauro').items.find(i => i.name === nome);
+    assert.equal(ids.has(item._id), false, nome);
+  }
+});
+
+test('textos: a linha de ataques (Corpo a Corpo) é atualizada', () => {
+  const r = ajustar(ficha('centauro'), '7', 'special');
+  assert.equal(r.update['system.detalhes.ataquescac'], 'Bordão +22 (3d6+21) e cascos +22 (3d6+21).');
+  assert.deepEqual(r.textos.ataques, [{
+    campo: 'ataquescac',
+    antes: 'Bordão +11 (1d8+4) e cascos +11 (1d8+4).',
+    depois: 'Bordão +22 (3d6+21) e cascos +22 (3d6+21).',
+  }]);
+  assert.equal('system.detalhes.ataquesad' in r.update, false); // campo vazio não é preenchido
+});
+
+test('textos: CD dentro da descrição da arma e dentro da linha de ataques (Aparição)', () => {
+  const r = ajustar(ficha('aparicao'), '5', 'solo');
+  const toque = r.itemUpdates.find(u => u._id === '1dUkvjqGzvhL4L2M');
+  assert.match(toque['system.description.value'], /Fortitude \(CD 20\)/);
+  assert.ok(toque['system.rolls']); // as rolagens vêm no mesmo update
+  assert.match(r.update['system.detalhes.ataquescac'], /^Toque drenante \+17 \(4d6\+26 de trevas\)\./);
+  assert.match(r.update['system.detalhes.ataquescac'], /Fortitude \(CD 20\)\. Se falhar/);
+});
+
+test('textos: dá para desligar a troca de CD e a de linhas de ataque', () => {
+  const c = ficha('centauro');
+  const semCD = ajustar(c, '7', 'special', { atualizarCDs: false });
+  assert.equal(semCD.itemUpdates.some(u => 'system.description.value' in u), false);
+  assert.deepEqual(semCD.textos.cds, []);
+  const semAtaques = ajustar(c, '7', 'special', { atualizarTextoAtaques: false });
+  assert.equal('system.detalhes.ataquescac' in semAtaques.update, false);
+  assert.deepEqual(semAtaques.textos.ataques, []);
+});

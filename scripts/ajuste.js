@@ -2,8 +2,11 @@
 // mostra (o clone preparado, no Foundry) entra como a função `medir`.
 import { lerArmas, planejarAjuste } from './calculo.js';
 import { normalizarND } from './tabelas.js';
+import { atualizarCDs as trocarCDs, atualizarTextoAtaques as trocarTextoAtaques } from './textos.js';
 
 const NUMERO = /^[+-]?\d+(\.\d+)?$/;
+const TIPOS_COM_CD = ['poder', 'magia', 'arma'];
+const CAMPOS_DE_ATAQUE = ['ataquescac', 'ataquesad'];
 
 // Zera os termos numéricos do ataque (o bônus todo passa a vir da perícia) e escreve a fórmula de
 // dano na rolagem principal. Não altera o array recebido. Sem `formula`, só mexe no ataque.
@@ -43,6 +46,7 @@ function calibrar({ dados, update, alvosPericias, alvoDefesa, medir }) {
 export function calcularAjuste({
   dados, tabelas, nd, papel, medir,
   ataquesPorArma = {}, alternativas = {}, ordemResistencias,
+  atualizarCDs = true, atualizarTextoAtaques = true,
 }) {
   const antes = medir({});
   const armas = lerArmas(dados.items, dados.system.detalhes.ataquescac ?? '');
@@ -82,5 +86,38 @@ export function calcularAjuste({
     };
   });
 
-  return { plano, update, itemUpdates, antes, depois, avisos };
+  const textos = { cds: [], ataques: [] };
+
+  // Troca só o número da CD escrita nas descrições (poderes, magias e armas); o resto do texto fica igual.
+  if (atualizarCDs) {
+    for (const item of dados.items.filter(i => TIPOS_COM_CD.includes(i.type))) {
+      const original = item.system.description?.value;
+      const { texto, antigas } = trocarCDs(original, alvos.cd);
+      if (texto === original) continue;
+      textos.cds.push({ nome: item.name, antigas, para: alvos.cd });
+      let mudanca = itemUpdates.find(u => u._id === item._id);
+      if (!mudanca) itemUpdates.push(mudanca = { _id: item._id });
+      mudanca['system.description.value'] = texto;
+    }
+  }
+
+  // Atualiza as linhas de ataque (Corpo a Corpo / À Distância) que já têm texto.
+  if (atualizarTextoAtaques) {
+    const armasNoTexto = armas.map((arma) => ({
+      nome: arma.nome,
+      ataque: alvos.ataque,
+      formula: (ataquesPorArma[arma.id] ?? arma.ataques) > 0 ? plano.dano?.porArma[arma.id]?.formula : undefined,
+    }));
+    for (const campo of CAMPOS_DE_ATAQUE) {
+      const antesTexto = dados.system.detalhes[campo];
+      if (!antesTexto) continue;
+      let depoisTexto = trocarTextoAtaques(antesTexto, armasNoTexto);
+      if (atualizarCDs) depoisTexto = trocarCDs(depoisTexto, alvos.cd).texto;
+      if (depoisTexto === antesTexto) continue;
+      update[`system.detalhes.${campo}`] = depoisTexto;
+      textos.ataques.push({ campo, antes: antesTexto, depois: depoisTexto });
+    }
+  }
+
+  return { plano, update, itemUpdates, antes, depois, avisos, textos };
 }

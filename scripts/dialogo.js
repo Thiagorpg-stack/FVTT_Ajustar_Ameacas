@@ -34,6 +34,8 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       nd: NDS.includes(nd) ? nd : '1',
       papel: PAPEIS.some(([chave]) => chave === papel) ? papel : 'solo',
       copiar: true,
+      atualizarCDs: true,
+      atualizarTextoAtaques: true,
       ataques: Object.fromEntries(armas.map(a => [a.id, a.ataques])),
       alternativas: {},
       ordem: ordenarResistencias(criarMedidor(actor)().pericias),
@@ -51,6 +53,8 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       nds: NDS.map(v => ({ valor: v, selecionado: v === e.nd })),
       papeis: PAPEIS.map(([valor, rotulo]) => ({ valor, rotulo, selecionado: valor === e.papel })),
       copiar: e.copiar,
+      atualizarCDs: e.atualizarCDs,
+      atualizarTextoAtaques: e.atualizarTextoAtaques,
       erro: null, linhas: [], armas: [], avisos: [], revisar: [], selo: null, ordem: [],
     };
     contexto.ordem = ['Forte', 'Média', 'Fraca'].map((rotulo, i) => ({
@@ -68,6 +72,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       this.resultado = await simular(this.actor, {
         nd: e.nd, papel: e.papel, ataquesPorArma: e.ataques,
         alternativas: e.alternativas, ordemResistencias: e.ordem,
+        atualizarCDs: e.atualizarCDs, atualizarTextoAtaques: e.atualizarTextoAtaques,
       });
     } catch (erro) {
       console.error(`${ID_MODULO} |`, erro);
@@ -111,9 +116,19 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     const pior = grupos.find(g => g.alerta !== 'equilibrado') ?? grupos[0];
     return {
       linhas, armas: linhasArmas, avisos: r.avisos, revisar: r.plano.revisar,
+      textos: this.#montarTextos(r.textos),
       danoAlvo: r.plano.linha.Dano,
       selo: pior ? { alerta: pior.alerta, texto: SELOS[pior.alerta] } : null,
     };
+  }
+
+  #montarTextos(textos) {
+    const cds = textos.cds.map(({ nome, antigas, para }) =>
+      `${nome}: CD ${[...new Set(antigas)].join(' e ')} → ${para}`);
+    const ataques = textos.ataques.map(({ campo, antes, depois }) => ({
+      rotulo: campo === 'ataquescac' ? 'Corpo a Corpo' : 'À Distância', antes, depois,
+    }));
+    return { cds, ataques, temAlgo: cds.length > 0 || ataques.length > 0 };
   }
 
   _onRender() {
@@ -128,6 +143,8 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     e.nd = el.querySelector('[name=nd]').value;
     e.papel = el.querySelector('[name=papel]').value;
     e.copiar = el.querySelector('[name=copiar]').checked;
+    e.atualizarCDs = el.querySelector('[name=atualizarCDs]').checked;
+    e.atualizarTextoAtaques = el.querySelector('[name=atualizarTextoAtaques]').checked;
     el.querySelectorAll('[data-ataques]').forEach((c) => {
       e.ataques[c.dataset.ataques] = Math.max(0, parseInt(c.value, 10) || 0);
     });

@@ -15,6 +15,16 @@
       {{localize "T20AJND.Copia"}}
     </label>
   </div>
+  <div class="ajuste-nd__campos">
+    <label class="ajuste-nd__copia">
+      <input type="checkbox" name="atualizarCDs" {{#if atualizarCDs}}checked{{/if}}>
+      {{localize "T20AJND.AtualizarCDs"}}
+    </label>
+    <label class="ajuste-nd__copia">
+      <input type="checkbox" name="atualizarTextoAtaques" {{#if atualizarTextoAtaques}}checked{{/if}}>
+      {{localize "T20AJND.AtualizarAtaques"}}
+    </label>
+  </div>
 
   <fieldset>
     <legend>{{localize "T20AJND.Resistencias"}}</legend>
@@ -69,6 +79,16 @@
       </tbody>
     </table>
   </fieldset>
+
+  {{#if textos.temAlgo}}
+  <div class="ajuste-nd__textos">
+    <strong>{{localize "T20AJND.TextosAlterados"}}</strong>
+    <ul>
+      {{#each textos.cds}}<li>{{this}}</li>{{/each}}
+      {{#each textos.ataques}}<li>{{rotulo}}: {{antes}} → <em>{{depois}}</em></li>{{/each}}
+    </ul>
+  </div>
+  {{/if}}
 
   {{#if avisos.length}}
   <div class="ajuste-nd__avisos">

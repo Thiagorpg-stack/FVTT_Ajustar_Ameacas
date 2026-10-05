@@ -14,7 +14,14 @@ Na ficha de uma ameaça (ou no menu de contexto do diretório de atores), o mest
 | Defesa | O total mostrado na ficha vira o da tabela, ajustando só `defesa.base` (a ficha soma DES, armadura e escudo). |
 | Dano | Fórmula `Nd6+B` por arma, dividindo o dano por rodada da tabela entre os ataques (dano secundário e armas alternativas são tratados). |
 
-Não alteram: PM, atributos, efeitos ativos, magias e poderes (poderes e magias com dano aparecem na lista "Revisar").
+Textos escritos à mão (podem ser desligados no diálogo):
+
+| Texto | Como |
+|---|---|
+| CD nas descrições | Em poderes, magias e armas, troca só o número depois de "CD" (ex.: "CD 17" vira "CD 26"). O resto do texto não muda. |
+| Linhas de ataque (Corpo a Corpo / À Distância) | Troca o bônus de ataque e a fórmula de dano de cada arma citada (ex.: "Bordão +11 (1d8+4)" vira "Bordão +22 (3d6+21)"). Dano secundário, crítico, quantidades e o resto do texto ficam como estão. Só mexe em campos que já têm texto. |
+
+Não alteram: PM, atributos, efeitos ativos e o conteúdo de poderes e magias (poderes e magias com dano aparecem na lista "Para revisar").
 
 A prévia é calculada num clone da ficha; o **Aplicar** grava uma vez. Por padrão o módulo cria uma cópia e deixa o original intacto.
 

@@ -1,10 +1,10 @@
 // Plano de ajuste de ND a partir de dados "achatados" do ator. Sem dependência do Foundry.
 import { consultar, maxAtaques } from './tabelas.js';
 import { analisarDanoArma, balancearDano, ehCura } from './dano.js';
+import { padraoDoNome } from './textos.js';
 
 const QUANTIDADES = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, 'três': 3, quatro: 4, cinco: 5, seis: 6 };
 const PALAVRA_QTD = 'um|uma|dois|duas|tr[eê]s|quatro|cinco|seis';
-const escapar = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const quantidade = (palavra) => QUANTIDADES[palavra.toLowerCase()] ?? 1;
 
 // Ataques por rodada propostos para uma arma: system.ataques, senão a palavra de quantidade
@@ -17,9 +17,7 @@ export function contarAtaques(arma, ataquescac = '') {
   const inicio = secreto && new RegExp(`^\\s*(${PALAVRA_QTD})\\b`, 'i').exec(secreto[1]);
   if (inicio) return quantidade(inicio[1]);
 
-  const [primeira, ...resto] = arma.name.trim().split(/\s+/);
-  const nome = [`${escapar(primeira)}s?`, ...resto.map(escapar)].join('\\s+');
-  const citada = new RegExp(`(?:\\b(${PALAVRA_QTD})\\s+)?${nome}`, 'i').exec(ataquescac);
+  const citada = new RegExp(`(?:\\b(${PALAVRA_QTD})\\s+)?${padraoDoNome(arma.name)}`, 'i').exec(ataquescac);
   return citada?.[1] ? quantidade(citada[1]) : 1;
 }
 
