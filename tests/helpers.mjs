@@ -7,7 +7,7 @@ export function ficha(nome) {
   return JSON.parse(readFileSync(new URL(arq, pasta), 'utf8'));
 }
 
-export const nomesDasFichas = () => readdirSync(pasta).map(f => f.split('-')[2]);
+export const nomesDasFichas = () => readdirSync(pasta).filter(f => f.endsWith('.json')).map(f => f.split('-')[2]);
 
 // Regra do sistema (menace.mjs, v1.5.015): S e S+ valem nível 20; número vale nível; o resto vale 1.
 const nivelSistema = (nd) => (['S', 'S+'].includes(String(nd)) ? 20 : Number(nd) || 1);
