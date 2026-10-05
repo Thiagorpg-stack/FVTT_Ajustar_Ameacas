@@ -8,7 +8,9 @@ import {
 } from './textos.js';
 import { nivelDoND, sugerirCirculos } from './circulos.js';
 import { faixaDeHabilidades, avisosDePatamar } from './patamares.js';
-import { aplicarTemplates, ehItemDeTemplate, idAleatorio, lerMarcador, resolverBando, restaurarDados } from './templates.js';
+import {
+  aplicarMudancas, aplicarTemplates, ehItemDeTemplate, idAleatorio, lerMarcador, resolverBando, restaurarDados,
+} from './templates.js';
 
 const NUMERO = /^[+-]?\d+(\.\d+)?$/;
 const TIPOS_COM_CD = ['poder', 'magia', 'arma'];
@@ -97,7 +99,8 @@ export function calcularAjuste({
     avisos.push(`A defesa soma atributo/armadura da ficha: defesa.base ficou ${update[CAMINHO_DEFESA]} para o total ser ${alvos.defesa}.`);
   }
 
-  const itemUpdates = armas.map((arma) => {
+  // Com o Enxame as armas saem da ficha: não há o que atualizar nelas.
+  const itemUpdates = (templates.enxame ? [] : armas).map((arma) => {
     const item = dados.items.find(i => i._id === arma.id);
     const ataques = ataquesPorArma[arma.id] ?? arma.ataques;
     const formula = ataques > 0 ? plano.dano?.porArma[arma.id]?.formula : undefined;
@@ -119,7 +122,7 @@ export function calcularAjuste({
     const classesVistas = new Set();
     const maiorCirculoNaFicha = Math.max(0, ...dados.items
       .filter(i => i.type === 'magia').map(i => Number(i.system.circulo) || 0));
-    for (const item of dados.items.filter(i => TIPOS_COM_CD.includes(i.type))) {
+    for (const item of dados.items.filter(i => TIPOS_COM_CD.includes(i.type) && !(templates.enxame && i.type === 'arma'))) {
       const original = item.system.description?.value;
       let texto = original;
       if (atualizarNivelConjurador) {
@@ -182,6 +185,15 @@ export function calcularAjuste({
   // Templates (Chefe Final...): PM, RD e itens próprios; sempre calculados a partir do estado base.
   const modelo = aplicarTemplates({ dados: dadosReais, nd: ndTabela, ativos: templates, bando, danoND: plano.linha.Dano, gerarId });
   Object.assign(update, modelo.update);
+  // O que cada arma vai ter depois (para a prévia), antes de mover as atualizações das armas recriadas.
+  const armasUpdates = itemUpdates.filter(u => armas.some(a => a.id === u._id)).map(u => ({ ...u }));
+  // Armas devolvidas depois do Enxame não existem no ator: entram como itens novos, já com o ajuste aplicado.
+  const recriadas = new Map(modelo.armasParaRecriar.map(a => [a._id, a]));
+  for (let i = itemUpdates.length - 1; i >= 0; i--) {
+    if (!recriadas.has(itemUpdates[i]._id)) continue;
+    aplicarMudancas(recriadas.get(itemUpdates[i]._id), itemUpdates[i]);
+    itemUpdates.splice(i, 1);
+  }
   // Sem o Enxame, a linha de ataque original tem de voltar mesmo que o texto novo seja igual a ela.
   const eraEnxame = lerMarcador(dadosReais)?.ativos?.includes('enxame');
   if (eraEnxame && !templates.enxame && !('system.detalhes.ataquescac' in update)) {
@@ -190,7 +202,8 @@ export function calcularAjuste({
 
   return {
     plano, update, itemUpdates, antes, depois, avisos, textos, sugestoes, patamar,
-    itensCriar: modelo.itensCriar, itensRemover: modelo.itensRemover,
+    armasUpdates,
+    itensCriar: [...recriadas.values(), ...modelo.itensCriar], itensRemover: modelo.itensRemover,
     templates: { linhas: modelo.linhas, notas: modelo.notas, multDano: mult },
   };
 }

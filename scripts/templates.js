@@ -1,8 +1,8 @@
-// Templates de ameaça (Chefe Final e Enxame). Sem dependência do Foundry.
+// Templates de ameaça (Chefe Final, Enxame e Bando). Sem dependência do Foundry.
 //
-// O módulo guarda no ator um marcador com o estado ORIGINAL (PM, RD, texto de resistências, e para o
-// Enxame também os ataques das armas, a linha de ataque e o ic.custom) e marca com uma flag os itens
-// que cria. Assim o ajuste é repetível: antes de aplicar de novo, tudo volta ao estado base, e
+// O módulo guarda no ator um marcador com o estado ORIGINAL (PM, RD, texto de resistências; para o Enxame
+// também as armas inteiras, a linha de ataque e o ic.custom; para o Bando o tamanho e as rolagens) e marca
+// com uma flag os itens que cria. Assim o ajuste é repetível: antes de aplicar de novo, tudo volta ao estado base, e
 // desmarcar um template devolve a ficha como estava.
 import { valorND } from './tabelas.js';
 import { patamarDoND } from './patamares.js';
@@ -144,6 +144,17 @@ function mesclarRotulos(existente, novos) {
   return [...atuais, ...faltando].join(', ');
 }
 
+// Aplica a um item uma mudança no formato de itemUpdates ({ _id, 'system.rolls': ... }).
+export function aplicarMudancas(item, mudanca) {
+  for (const [caminho, valor] of Object.entries(mudanca)) {
+    if (caminho === '_id') continue;
+    const chaves = caminho.split('.');
+    const ultima = chaves.pop();
+    chaves.reduce((o, k) => (o[k] ??= {}), item)[ultima] = structuredClone(valor);
+  }
+  return item;
+}
+
 // Cópia da ficha com o que o Enxame alterou devolvido ao estado original (ataques das armas e linha de
 // ataque), para o resto do cálculo trabalhar sobre a ficha como ela era antes do template.
 export function restaurarDados(dados) {
@@ -152,9 +163,16 @@ export function restaurarDados(dados) {
   const bando = marcador?.ativos?.includes('bando');
   if (!(enxame || bando) || !marcador.base) return dados;
   const copia = structuredClone(dados);
+  // Marcador da v0.7.0: as armas ficavam na ficha com 0 ataques, e os ataques originais iam no marcador.
   for (const item of copia.items) {
     if (enxame && marcador.base.ataques && item._id in marcador.base.ataques) item.system.ataques = marcador.base.ataques[item._id];
     if (bando && marcador.base.rolls && item._id in marcador.base.rolls) item.system.rolls = structuredClone(marcador.base.rolls[item._id]);
+  }
+  // O Enxame remove as armas da ficha; para o cálculo elas voltam como eram.
+  if (enxame && marcador.base.armas) {
+    for (const arma of marcador.base.armas) {
+      if (!copia.items.some(i => i._id === arma._id)) copia.items.push(structuredClone(arma));
+    }
   }
   if (enxame && marcador.base.ataquescac !== undefined) copia.system.detalhes.ataquescac = marcador.base.ataquescac;
   return copia;
@@ -167,21 +185,22 @@ export function aplicarTemplates({ dados, nd, ativos = {}, bando = null, danoND,
   const marcador = lerMarcador(dados);
   const chefe = Boolean(ativos.chefeFinal);
   const enxame = Boolean(ativos.enxame);
-  const vazio = { update: {}, itensCriar: [], itensRemover: [], linhas: [], notas: [] };
+  const vazio = { update: {}, itensCriar: [], armasParaRecriar: [], itensRemover: [], linhas: [], notas: [] };
   if (!chefe && !enxame && !bando && !marcador) return vazio;
 
   const sys = dados.system;
   const rdDados = sys.tracos.resistencias.dano;
+  const restaurados = restaurarDados(dados);
   const atuais = {
     pmMax: sys.attributes.pm.max,
     pmValue: sys.attributes.pm.value,
     rdBase: rdAtual(rdDados),
     resistenciasTexto: sys.detalhes.resistencias ?? '',
-    ataques: Object.fromEntries(dados.items.filter(i => i.type === 'arma').map(i => [i._id, i.system.ataques ?? 0])),
+    armas: restaurados.items.filter(i => i.type === 'arma' && !ehItemDeTemplate(i)).map(i => structuredClone(i)),
     ataquescac: sys.detalhes.ataquescac ?? '',
     icCustom: sys.tracos.ic?.custom ?? '',
     tamanho: sys.tracos.tamanho,
-    rolls: Object.fromEntries(dados.items.filter(i => i.type === 'arma').map(i => [i._id, structuredClone(i.system.rolls)])),
+    rolls: Object.fromEntries(restaurados.items.filter(i => i.type === 'arma').map(i => [i._id, structuredClone(i.system.rolls)])),
   };
   const base = { ...atuais, ...marcador?.base };
 
@@ -230,7 +249,9 @@ export function aplicarTemplates({ dados, nd, ativos = {}, bando = null, danoND,
 
   if (enxame) {
     const formula = formulaParaMedia(danoND);
-    update['system.detalhes.ataquescac'] = `Enxame (${formula}). ${DESCRICAO_ENXAME}`;
+    // As armas saem da ficha (o bloco de estatísticas lista toda arma, mesmo com 0 ataques); sem armas, o
+    // bloco de Corpo a Corpo some, e o poder Enxame já descreve o ataque.
+    update['system.detalhes.ataquescac'] = '';
     itensCriar.push(criarPoder({
       id: gerarId(), nome: 'Enxame', descricao: DESCRICAO_ENXAME, origem: 'enxame',
       rolls: [{ name: 'Dano', key: 'dano0', type: 'dano', parts: [[formula, 'dano', '']], versatil: '', adaptavel: '' }],
@@ -238,7 +259,7 @@ export function aplicarTemplates({ dados, nd, ativos = {}, bando = null, danoND,
     for (const [nome, descricao] of PODERES_ENXAME) {
       itensCriar.push(criarPoder({ id: gerarId(), nome, descricao, origem: 'enxame' }));
     }
-    notas.push(`Enxame: dano automático de ${formula} (média ${mediaFormula(formula)}) no lugar dos ataques das armas, que ficam com 0 ataques.`);
+    notas.push(`Enxame: dano automático de ${formula} (média ${mediaFormula(formula)}). As armas são removidas da ficha e voltam se você desmarcar o Enxame.`);
   }
 
   if (chefe) {
@@ -252,7 +273,7 @@ export function aplicarTemplates({ dados, nd, ativos = {}, bando = null, danoND,
 
   // O marcador guarda só o que os templates marcados alteram; o do Enxame inclui ataques e textos.
   const guardada = { pmMax: base.pmMax, pmValue: base.pmValue, rdBase: base.rdBase, resistenciasTexto: base.resistenciasTexto };
-  if (enxame) Object.assign(guardada, { ataques: base.ataques, ataquescac: base.ataquescac });
+  if (enxame) Object.assign(guardada, { armas: base.armas, ataquescac: base.ataquescac });
   if (bando) Object.assign(guardada, { tamanho: base.tamanho, rolls: base.rolls });
   if (enxame || bando) guardada.icCustom = base.icCustom;
   const ativosMarcados = ['bando', 'enxame', 'chefeFinal'].filter(chave => (chave === 'bando' ? bando : ativos[chave]));
@@ -260,10 +281,17 @@ export function aplicarTemplates({ dados, nd, ativos = {}, bando = null, danoND,
   if (bando) novoMarcador.bando = { escala: bando.escala, aumentoND: bando.aumentoND, ndIndividual: bando.ndIndividual };
   update[`flags.${FLAG}.templates`] = novoMarcador;
 
+  // Sem o Enxame, as armas que ele tirou da ficha voltam (o cálculo ainda põe o dano novo nelas).
+  const armasParaRecriar = !enxame && marcador?.ativos?.includes('enxame')
+    ? (marcador.base?.armas ?? []).filter(a => !dados.items.some(i => i._id === a._id)).map(a => structuredClone(a))
+    : [];
+  const armasQueSaem = enxame ? dados.items.filter(i => i.type === 'arma' && !ehItemDeTemplate(i)).map(i => i._id) : [];
+
   return {
     update,
     itensCriar,
-    itensRemover: dados.items.filter(ehItemDeTemplate).map(i => i._id),
+    armasParaRecriar,
+    itensRemover: [...dados.items.filter(ehItemDeTemplate).map(i => i._id), ...armasQueSaem],
     linhas,
     notas,
   };
