@@ -23,6 +23,7 @@
   "T20AJND.Aplicado": "Ajuste aplicado: {nome}",
   "T20AJND.AtualizarCDs": "Trocar a CD escrita nos textos de poderes, magias e armas",
   "T20AJND.AtualizarNivelConjurador": "Atualizar o nível de conjurador escrito nas magias (\"como um clérigo de 10º nível\" passa a usar o ND)",
+  "T20AJND.Patamar": "Patamar de ND (nada é alterado na ficha)",
   "T20AJND.Sugestoes": "Sugestões de círculos de magia (nada é adicionado à ficha)",
   "T20AJND.AtualizarAtaques": "Atualizar as linhas de ataque (Corpo a Corpo / À Distância)",
   "T20AJND.TextosAlterados": "Textos que serão alterados",
@@ -45,5 +46,6 @@
   "T20AJND.NovidadesTitulo": "Novidades da versão",
   "T20AJND.Novidade040Conjurador": "Nível de conjurador nos textos: \"lança magias como um clérigo de 10º nível\" passa a usar o ND de destino como nível, mantendo a classe.",
   "T20AJND.Novidade040Circulos": "A prévia sugere círculos de magia liberados (ou acima do permitido) pelo novo nível. Nada é adicionado à ficha.",
-  "T20AJND.Novidade040Boasvindas": "Esta mensagem de boas-vindas e de novidades, enviada só ao Mestre."
+  "T20AJND.Novidade040Boasvindas": "Esta mensagem de boas-vindas e de novidades, enviada só ao Mestre.",
+  "T20AJND.Novidade050Patamar": "Avisos de patamar na prévia: ao mudar de Iniciante, Veterano, Campeão ou Lenda, mostra o limite de ataques por rodada e a faixa de poderes sugerida para o papel. Nada é alterado na ficha."
 }

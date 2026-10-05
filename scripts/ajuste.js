@@ -1,12 +1,13 @@
 // Monta e calibra o ajuste de uma ficha. Sem dependência do Foundry: quem mede o que a ficha
 // mostra (o clone preparado, no Foundry) entra como a função `medir`.
-import { lerArmas, planejarAjuste } from './calculo.js';
+import { lerArmas, planejarAjuste, totalAtaques } from './calculo.js';
 import { normalizarND } from './tabelas.js';
 import {
   atualizarCDs as trocarCDs, atualizarTextoAtaques as trocarTextoAtaques,
   atualizarNivelConjurador as trocarNivelConjurador,
 } from './textos.js';
 import { nivelDoND, sugerirCirculos } from './circulos.js';
+import { faixaDeHabilidades, avisosDePatamar } from './patamares.js';
 
 const NUMERO = /^[+-]?\d+(\.\d+)?$/;
 const TIPOS_COM_CD = ['poder', 'magia', 'arma'];
@@ -143,5 +144,20 @@ export function calcularAjuste({
     }
   }
 
-  return { plano, update, itemUpdates, antes, depois, avisos, textos, sugestoes };
+  // Mudança de patamar: só informa o que muda para ataques por rodada e quantidade de poderes.
+  const armasFinais = armas.map(a => ({
+    ...a,
+    ataques: ataquesPorArma[a.id] ?? a.ataques,
+    alternativa: alternativas[a.id] ?? a.alternativa ?? false,
+  }));
+  const patamar = avisosDePatamar({
+    ndAntes: dados.system.attributes.nd,
+    ndDepois: nd,
+    papel,
+    ataques: totalAtaques(armasFinais.filter(a => a.ataques > 0)),
+    poderes: dados.items.filter(i => i.type === 'poder').length,
+    faixa: faixaDeHabilidades(tabelas, papel, nd),
+  });
+
+  return { plano, update, itemUpdates, antes, depois, avisos, textos, sugestoes, patamar };
 }

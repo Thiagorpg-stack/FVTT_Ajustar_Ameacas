@@ -55,3 +55,8 @@ test('montarMensagem escapa HTML vindo do texto de tradução', () => {
   const html = montarMensagem('completa', '0.4.0', (chave) => `<script>${chave}</script>`);
   assert.doesNotMatch(html, /<script>/);
 });
+
+test('a v0.5.0 anuncia os avisos de patamar', () => {
+  assert.equal(decidirMensagem('0.4.0', '0.5.0'), 'novidades');
+  assert.match(montarMensagem('novidades', '0.5.0', t), /patamar/i);
+});

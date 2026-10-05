@@ -109,6 +109,13 @@
   </div>
   {{/if}}
 
+  {{#if patamar.length}}
+  <div class="ajuste-nd__patamar">
+    <strong>{{localize "T20AJND.Patamar"}}</strong>
+    <ul>{{#each patamar}}<li>{{this}}</li>{{/each}}</ul>
+  </div>
+  {{/if}}
+
   {{#if sugestoes.length}}
   <div class="ajuste-nd__sugestoes">
     <strong>{{localize "T20AJND.Sugestoes"}}</strong>

@@ -59,7 +59,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       atualizarTextoAtaques: e.atualizarTextoAtaques,
       atualizarNivelConjurador: e.atualizarNivelConjurador,
       manterProporcao: e.manterProporcao,
-      erro: null, linhas: [], armas: [], avisos: [], revisar: [], sugestoes: [], selo: null, ordem: [],
+      erro: null, linhas: [], armas: [], avisos: [], revisar: [], sugestoes: [], patamar: [], selo: null, ordem: [],
     };
     contexto.ordem = ['Forte', 'Média', 'Fraca'].map((rotulo, i) => ({
       indice: i, rotulo,
@@ -128,7 +128,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     } : null;
     const pior = grupos.find(g => g.alerta !== 'equilibrado') ?? grupos[0];
     return {
-      linhas, armas: linhasArmas, avisos: r.avisos, revisar: r.plano.revisar, sugestoes: r.sugestoes,
+      linhas, armas: linhasArmas, avisos: r.avisos, revisar: r.plano.revisar, sugestoes: r.sugestoes, patamar: r.patamar,
       textos: this.#montarTextos(r.textos),
       danoAlvo: r.plano.linha.Dano,
       rodada,

@@ -4,6 +4,7 @@
 // Chaves de texto das novidades de cada versão. Versão sem entrada aqui não gera mensagem.
 export const NOVIDADES = {
   '0.4.0': ['T20AJND.Novidade040Conjurador', 'T20AJND.Novidade040Circulos', 'T20AJND.Novidade040Boasvindas'],
+  '0.5.0': ['T20AJND.Novidade050Patamar'],
 };
 
 const versaoComoNumeros = (versao) => String(versao ?? '').split('.').map(n => parseInt(n, 10) || 0);

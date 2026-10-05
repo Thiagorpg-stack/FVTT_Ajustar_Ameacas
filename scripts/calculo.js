@@ -57,10 +57,15 @@ export function atribuirResistencias(totais, linha, ordem) {
   return Object.fromEntries((ordem ?? ordenarResistencias(totais)).map((chave, i) => [chave, valores[i]]));
 }
 
-export function avisoLimite(armas, nd) {
+// Ataques por rodada: armas compartilhadas somam; entre as alternativas vale a que mais ataca.
+export function totalAtaques(armas) {
   const soma = armas.filter(a => !a.alternativa).reduce((s, a) => s + a.ataques, 0);
   const alternativa = Math.max(0, ...armas.filter(a => a.alternativa).map(a => a.ataques));
-  const total = soma + alternativa;
+  return soma + alternativa;
+}
+
+export function avisoLimite(armas, nd) {
+  const total = totalAtaques(armas);
   const limite = maxAtaques(nd);
   return total > limite
     ? `São ${total} ataques por rodada, mas o limite do ND ${nd} é ${limite} (aviso, não bloqueia).`
