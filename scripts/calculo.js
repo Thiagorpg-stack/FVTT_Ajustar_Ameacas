@@ -68,7 +68,7 @@ export function avisoLimite(armas, nd) {
   const total = totalAtaques(armas);
   const limite = maxAtaques(nd);
   return total > limite
-    ? `São ${total} ataques por rodada, mas o limite do ND ${nd} é ${limite} (aviso, não bloqueia).`
+    ? `São ${total} ataques por rodada, mas o limite do ND ${nd} é ${limite}.`
     : null;
 }
 

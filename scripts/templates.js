@@ -19,6 +19,15 @@ const CARACTERES_ID = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234
 export const idAleatorio = () =>
   Array.from({ length: 16 }, () => CARACTERES_ID[Math.floor(Math.random() * CARACTERES_ID.length)]).join('');
 
+const ROTULOS_TEMPLATE = { bando: 'Bando', enxame: 'Enxame', chefeFinal: 'Chefe Final' };
+
+// Nome da cópia: "Nome (ND 10, Chefe Final)". Troca o sufixo "(ND ...)" de um ajuste anterior em vez de empilhar.
+export function nomeDaCopia(nome, nd, ativos = []) {
+  const base = nome.replace(/\s*\(ND [^)]*\)\s*$/, '');
+  const tags = Object.keys(ROTULOS_TEMPLATE).filter(chave => ativos.includes(chave)).map(chave => ROTULOS_TEMPLATE[chave]);
+  return `${base} (${['ND ' + nd, ...tags].join(', ')})`;
+}
+
 export const lerMarcador = (dados) => dados.flags?.[FLAG]?.templates ?? null;
 export const ehItemDeTemplate = (item) => Boolean(item.flags?.[FLAG]?.origem);
 

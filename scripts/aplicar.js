@@ -1,6 +1,7 @@
 // Ponte com o Foundry: mede a ficha por um clone preparado, simula e grava o ajuste.
 import { calcularAjuste } from './ajuste.js';
 import { carregarTabelas } from './tabelas.js';
+import { FLAG, nomeDaCopia } from './templates.js';
 
 export const ID_MODULO = 'tormenta20-ajuste-nd';
 
@@ -53,6 +54,6 @@ export async function aplicarAjuste(actor, resultado, { copiar = true } = {}) {
   dados.items = dados.items.filter(i => !remover.has(i._id)).concat(itensCriar);
   delete dados._id;
   delete dados._stats;
-  dados.name = `${actor.name} (ND ${update['system.attributes.nd']})`;
+  dados.name = nomeDaCopia(actor.name, update['system.attributes.nd'], update[`flags.${FLAG}.templates`]?.ativos ?? []);
   return Actor.create(dados);
 }
