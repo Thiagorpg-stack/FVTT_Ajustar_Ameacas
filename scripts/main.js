@@ -1,5 +1,6 @@
 import { abrirAjusteND } from './dialogo.js';
-import { ID_MODULO } from './aplicar.js';
+import { ID_MODULO, obterTabelas, simular, aplicarAjuste } from './aplicar.js';
+import { criarApi } from './api.js';
 import { decidirMensagem, montarMensagem } from './boas-vindas.js';
 
 const CLASSE_BOTAO = 't20-ajuste-nd';
@@ -54,6 +55,6 @@ async function avisarNoChat() {
 }
 
 Hooks.once('ready', () => {
-  game.modules.get(ID_MODULO).api = { abrirAjusteND };
+  game.modules.get(ID_MODULO).api = criarApi({ abrirAjusteND, obterTabelas, simular, aplicarAjuste });
   avisarNoChat().catch(erro => console.error(`${ID_MODULO} |`, erro));
 });

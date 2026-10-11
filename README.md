@@ -47,7 +47,11 @@ A prévia é calculada num clone da ficha; o **Aplicar** grava uma vez. Por padr
 
 ## Compatibilidade
 
-Foundry VTT v13 (testado com 13.351) e sistema Tormenta20 1.5.x.
+Foundry VTT v13 (testado com 13.351) e v14 (14.369), com o sistema Tormenta20 1.5.x (v13) ou o fork T20 1.6.6 (v14). No v14 o módulo depende de o sistema rodar nessa versão.
+
+## API para outros módulos
+
+A partir da 0.9.0, `game.modules.get("tormenta20-ajuste-nd").api` expõe as tabelas e o cálculo. Veja o [API.md](API.md).
 
 ## Licença e aviso legal
 
