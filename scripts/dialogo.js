@@ -1,5 +1,5 @@
 // Diálogo "Ajustar ND": escolhe ND-alvo, papel e ataques por arma e mostra a prévia antes → depois.
-import { lerArmas, ordenarResistencias } from './calculo.js';
+import { lerArmas, lerPoderes, ordenarResistencias } from './calculo.js';
 import { mediaFormula } from './dano.js';
 import { aplicarAjuste, criarMedidor, simular, ID_MODULO } from './aplicar.js';
 import { aumentoPadrao, lerMarcador, restaurarDados } from './templates.js';
@@ -50,6 +50,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       bandoAumento: marcador?.bando?.aumentoND ?? aumentoPadrao('10-20'),
       ataques: Object.fromEntries(armas.map(a => [a.id, a.ataques])),
       alternativas: {},
+      poderes: Object.fromEntries(lerPoderes(dados.items).map(p => [p.id, { ajustar: p.ajustar, efeito: p.efeito }])),
       ordem: ordenarResistencias(criarMedidor(actor)().pericias),
       ordemInvalida: false,
     };
@@ -73,6 +74,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       enxame: e.enxame,
       semArmas: e.enxame && !e.bando,
       bando: e.bando,
+      poderes: [],
       bandoAumento: e.bandoAumento,
       escalas: ESCALAS_BANDO.map(valor => ({ valor, selecionado: valor === e.bandoEscala })),
       erro: null, linhas: [], armas: [], avisos: [], revisar: [], sugestoes: [], patamar: [], notasTemplates: [], selo: null, ordem: [],
@@ -91,7 +93,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       this.resultado = await simular(this.actor, {
         nd: e.nd, papel: e.papel, ataquesPorArma: e.ataques,
-        alternativas: e.alternativas, ordemResistencias: e.ordem,
+        alternativas: e.alternativas, ordemResistencias: e.ordem, escolhasPoderes: e.poderes,
         atualizarCDs: e.atualizarCDs, atualizarTextoAtaques: e.atualizarTextoAtaques,
         atualizarNivelConjurador: e.atualizarNivelConjurador, manterProporcao: e.manterProporcao,
         templates: {
@@ -152,7 +154,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     } : null;
     const pior = grupos.find(g => g.alerta !== 'equilibrado') ?? grupos[0];
     return {
-      linhas, armas: linhasArmas, avisos: r.avisos, revisar: r.plano.revisar, sugestoes: r.sugestoes, patamar: r.patamar, notasTemplates: r.templates.notas,
+      linhas, armas: linhasArmas, poderes: r.poderesPrevia, avisos: r.avisos, revisar: r.plano.revisar, sugestoes: r.sugestoes, patamar: r.patamar, notasTemplates: r.templates.notas,
       textos: this.#montarTextos(r.textos),
       danoAlvo: r.plano.linha.Dano,
       rodada,
@@ -210,6 +212,13 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     el.querySelectorAll('[data-alternativa]').forEach((c) => {
       e.alternativas[c.dataset.alternativa] = c.checked;
+    });
+    // Campos desabilitados (Bando; efeito de poder que não é de ação padrão) mostram um valor que não é a escolha.
+    el.querySelectorAll('[data-poder-ajustar]:not(:disabled)').forEach((c) => {
+      e.poderes[c.dataset.poderAjustar].ajustar = c.checked;
+    });
+    el.querySelectorAll('[data-poder-efeito]:not(:disabled)').forEach((c) => {
+      e.poderes[c.dataset.poderEfeito].efeito = c.checked;
     });
     e.ordem = [0, 1, 2].map(i => el.querySelector(`[name=ordem-${i}]`).value);
     e.ordemInvalida = new Set(e.ordem).size !== 3;

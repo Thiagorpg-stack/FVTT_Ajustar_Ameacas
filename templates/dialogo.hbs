@@ -114,6 +114,37 @@
     {{/if}}
   </fieldset>
 
+  {{#if poderes.length}}
+  <fieldset>
+    <legend>{{localize "T20AJND.Poderes"}}</legend>
+    <p class="ajuste-nd__dica">{{localize "T20AJND.PoderesDica"}}{{#if bando}} {{localize "T20AJND.PoderesBando"}}{{/if}}</p>
+    <table class="ajuste-nd__tabela">
+      <thead>
+        <tr>
+          <th>{{localize "T20AJND.Poder"}}</th>
+          <th>{{localize "T20AJND.PoderAcao"}}</th>
+          <th>{{localize "T20AJND.PoderAjustar"}}</th>
+          <th title="{{localize 'T20AJND.PoderEfeitoDica'}}">{{localize "T20AJND.PoderEfeito"}}</th>
+          <th>{{localize "T20AJND.Antes"}}</th>
+          <th>{{localize "T20AJND.Depois"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each poderes}}
+        <tr>
+          <td>{{nome}}</td>
+          <td>{{#if padrao}}{{localize "T20AJND.AcaoPadrao"}}{{else}}{{localize "T20AJND.AcaoOutra"}}{{/if}}</td>
+          <td><input type="checkbox" data-poder-ajustar="{{id}}" {{#if ajustar}}checked{{/if}} {{#if ../bando}}disabled{{/if}}></td>
+          <td><input type="checkbox" data-poder-efeito="{{id}}" {{#if efeito}}checked{{/if}} {{#unless padrao}}disabled{{/unless}} {{#if ../bando}}disabled{{/if}}></td>
+          <td>{{antes}}</td>
+          <td>{{#if depois}}{{depois}}{{else}}<em>{{localize "T20AJND.SemAlteracao"}}</em>{{/if}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </fieldset>
+  {{/if}}
+
   {{#if textos.temAlgo}}
   <div class="ajuste-nd__textos">
     <strong>{{localize "T20AJND.TextosAlterados"}}</strong>
