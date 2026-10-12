@@ -1,5 +1,5 @@
 // Ponte com o Foundry: mede a ficha por um clone preparado, simula e grava o ajuste.
-import { calcularAjuste } from './ajuste.js';
+import { calcularAjuste, completarPericias } from './ajuste.js';
 import { carregarTabelas } from './tabelas.js';
 import { FLAG, nomeDaCopia } from './templates.js';
 
@@ -37,7 +37,7 @@ export async function aplicarAjuste(actor, resultado, { copiar = true } = {}) {
   console.info(`${ID_MODULO} | Ajustando ${actor.name}`, { update, itemUpdates, copiar });
 
   if (!copiar) {
-    await actor.update(update);
+    await actor.update(completarPericias(actor.toObject(), update));
     await actor.updateEmbeddedDocuments('Item', itemUpdates);
     if (itensRemover.length) await actor.deleteEmbeddedDocuments('Item', itensRemover);
     if (itensCriar.length) await actor.createEmbeddedDocuments('Item', itensCriar, { keepId: true });

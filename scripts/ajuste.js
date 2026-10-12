@@ -45,6 +45,23 @@ export function reescreverRolls(rolls, { indiceRollDano, formula, multiplicador 
 const caminhoOutros = (pericia) => `system.pericias.${pericia}.outros`;
 const CAMINHO_DEFESA = 'system.attributes.defesa.base';
 
+// O sistema Tormenta20 (1.6.6) preenche com os valores padrão os campos que faltam de uma perícia atualizada
+// por caminho parcial ("system.pericias.fort.outros"): a ficha perdia o atributo, o treino etc. Na gravação
+// direta (sem cópia) o update leva o system.pericias inteiro: os valores atuais mais as mudanças.
+// shortcut: só caminhos de um nível dentro da perícia ("outros"); se aparecer um mais fundo, tratar o caminho.
+export function completarPericias(dados, update) {
+  const resultado = {};
+  let pericias = null;
+  for (const [caminho, valor] of Object.entries(update)) {
+    const m = /^system\.pericias\.([^.]+)\.([^.]+)$/.exec(caminho);
+    if (!m) { resultado[caminho] = valor; continue; }
+    pericias ??= structuredClone(dados.system.pericias);
+    pericias[m[1]][m[2]] = valor;
+  }
+  if (pericias) resultado['system.pericias'] = pericias;
+  return resultado;
+}
+
 // Ajusta `outros` das perícias e `defesa.base` até o que a ficha mostra bater com os alvos.
 function calibrar({ dados, update, alvosPericias, alvoDefesa, medir }) {
   const medido = medir(update);
