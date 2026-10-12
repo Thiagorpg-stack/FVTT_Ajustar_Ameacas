@@ -14,6 +14,18 @@ Na ficha de uma ameaça (ou no menu de contexto do diretório de atores), o mest
 | Defesa | O total mostrado na ficha vira o da tabela, ajustando só `defesa.base` (a ficha soma DES, armadura e escudo). |
 | Dano | Fórmula `Nd6+B` por arma, dividindo o dano por rodada da tabela entre os golpes. Por padrão mantém a **proporção** entre as armas da ficha original (a que causava mais dano continua causando mais); o dano secundário (como "1d6 de ácido") fica fixo e só o principal é recalculado. Desligando a opção, todas as armas recebem a mesma fórmula. Armas alternativas (uma OU outra) são balanceadas cada uma contra o dano total. |
 
+### Poderes com dano
+
+Na seção **Poderes com dano** do diálogo, cada poder com dano numérico tem as caixas **Ajustar** e **Com efeito**. Os poderes vêm **desmarcados**: ligar tudo mudaria o dano das armas das fichas existentes sem aviso. "Com efeito" é o poder que impõe condição, tem teste de resistência ou é de área; o padrão sai de palavras no texto e pode ser editado. A escolha fica gravada na flag `danoPoder` do poder (`{ ajustar, efeito }`).
+
+| Tipo de ação | Como entra no dano |
+|---|---|
+| Padrão ou completa, com efeito | `0,6 × dano da tabela`, só em dados. |
+| Padrão ou completa, sem efeito | `0,7 × dano da tabela` (provisório, escolha de quem mantém o módulo), só em dados. |
+| Passivo, reação, movimento, especial, livre | Divide o dano da rodada com as armas (`Nd6+B`), 1 uso por rodada. |
+
+A fórmula do poder de ação padrão mantém o dado do original (d12 se não houver), sem bônus fixo e com no máximo **ND + 1 dados** (ND 1/4 e 1/2 contam como 0); se o limite cortar, o dano fica abaixo do alvo e a prévia avisa. Com duas partes de dano, o total é repartido na proporção original e cada parte mantém o seu dado. A fórmula também é trocada no texto da descrição ("16 (3d8 + 3 Bludgeoning)" ou "16d12 pontos"). Com o template **Bando** os poderes não são ajustados e ficam em "Para revisar". Magias (dano por PM) ficam fora.
+
 Textos escritos à mão (podem ser desligados no diálogo):
 
 | Texto | Como |
@@ -22,7 +34,7 @@ Textos escritos à mão (podem ser desligados no diálogo):
 | Nível de conjurador | "Lança magias como um clérigo de 10º nível" passa a usar o ND de destino como nível (a classe e o um/uma ficam como estão). |
 | Linhas de ataque (Corpo a Corpo / À Distância) | Troca o bônus de ataque e a fórmula de dano de cada arma citada (ex.: "Bordão +11 (1d8+4)" vira "Bordão +22 (3d6+21)"). Dano secundário, crítico, quantidades e o resto do texto ficam como estão. Só mexe em campos que já têm texto. |
 
-Não alteram: atributos, efeitos ativos e o conteúdo de poderes e magias (poderes e magias com dano aparecem na lista "Para revisar"). O PM só muda com o template Chefe Final.
+Não alteram: atributos, efeitos ativos e o conteúdo de poderes e magias, fora o dano dos poderes marcados (os demais poderes e as magias com dano aparecem na lista "Para revisar"). O PM só muda com o template Chefe Final.
 
 ## Avisos na prévia (nada é alterado na ficha)
 
@@ -51,7 +63,7 @@ Foundry VTT v13 (testado com 13.351) e v14 (14.369), com o sistema Tormenta20 1.
 
 ## API para outros módulos
 
-A partir da 0.9.0, `game.modules.get("tormenta20-ajuste-nd").api` expõe as tabelas e o cálculo. Veja o [API.md](API.md).
+A partir da 0.9.0, `game.modules.get("tormenta20-ajuste-nd").api` expõe as tabelas e o cálculo (versão 2 da API a partir da 0.10.0). Veja o [API.md](API.md).
 
 ## Licença e aviso legal
 

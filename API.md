@@ -12,7 +12,9 @@ const api = modulo.api;
 
 A API fica disponível depois do hook `ready`.
 
-## Funções (versaoApi 1)
+## Funções (versaoApi 2)
+
+A `versaoApi` 2 (Ajustar ND 0.10.0) acrescenta o dano dos poderes: `simular` aceita `escolhasPoderes` e devolve `poderesPrevia` (abaixo). As funções da versão 1 não mudaram.
 
 | Função | O que faz |
 |---|---|
@@ -26,7 +28,11 @@ A API fica disponível depois do hook `ready`.
 
 ### Opções de `simular`
 
-`nd`, `papel` (código do sistema), `ataquesPorArma` (`{ idDaArma: quantidade }`), `alternativas`, `ordemResistencias`, `atualizarCDs`, `atualizarTextoAtaques`, `atualizarNivelConjurador`, `manterProporcao` e `templates` (`chefeFinal`, `enxame`, `bando`). Os mesmos campos do diálogo.
+`nd`, `papel` (código do sistema), `ataquesPorArma` (`{ idDaArma: quantidade }`), `alternativas`, `ordemResistencias`, `atualizarCDs`, `atualizarTextoAtaques`, `atualizarNivelConjurador`, `manterProporcao`, `templates` (`chefeFinal`, `enxame`, `bando`) e `escolhasPoderes` (`{ idDoPoder: { ajustar, efeito } }`, versão 2). Os mesmos campos do diálogo.
+
+### Dano dos poderes (versaoApi 2)
+
+Um poder só é ajustado se estiver marcado: pela flag do item `flags["tormenta20-ajuste-nd"].danoPoder = { ajustar, efeito }` ou por `escolhasPoderes` (que vale mais que a flag). Sem nenhuma das duas, o poder não é tocado. Quem cria poderes por código (como o 5e para T20) grava a flag. O resultado de `simular` traz `poderesPrevia`: `[{ id, nome, padrao, ajustar, efeito, antes, depois }]`, com as fórmulas antes e depois (`depois` é `null` se o poder não é ajustado). Os `itemUpdates` do resultado também gravam a flag dos poderes marcados. Com o template Bando os poderes não são ajustados.
 
 ## Exemplo
 

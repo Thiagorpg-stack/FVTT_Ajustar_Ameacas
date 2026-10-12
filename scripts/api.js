@@ -2,7 +2,7 @@
 // Sem dependência do Foundry: quem monta a API (main.js) injeta as funções que precisam do Foundry.
 import { consultar, valorND, maxAtaques } from './tabelas.js';
 
-export const VERSAO_API = 1;
+export const VERSAO_API = 2;
 
 // Objeto exposto em game.modules.get('tormenta20-ajuste-nd').api
 export function criarApi({ abrirAjusteND, obterTabelas, simular, aplicarAjuste }) {
