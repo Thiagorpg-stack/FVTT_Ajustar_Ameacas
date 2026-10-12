@@ -1,7 +1,8 @@
 // Plano de ajuste de ND a partir de dados "achatados" do ator. Sem dependência do Foundry.
 import { consultar, maxAtaques } from './tabelas.js';
-import { analisarDanoArma, balancearDano, ehCura } from './dano.js';
+import { analisarDanoArma, balancearDano, ehCura, limiteDados, mediaFormula } from './dano.js';
 import { padraoDoNome } from './textos.js';
+import { FLAG } from './templates.js';
 
 const QUANTIDADES = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, 'três': 3, quatro: 4, cinco: 5, seis: 6 };
 const PALAVRA_QTD = 'um|uma|dois|duas|tr[eê]s|quatro|cinco|seis';
@@ -42,6 +43,43 @@ export function lerArmas(items, ataquescac = '') {
   return armas;
 }
 
+// Fator sobre o dano da tabela para poder de ação padrão/completa: com efeito (condição, teste de
+// resistência ou área) ou sem efeito (0,7 é provisório, escolha do mestre).
+export const FATOR_COM_EFEITO = 0.6;
+export const FATOR_SEM_EFEITO = 0.7;
+const EXECUCOES_PADRAO = ['action', 'full'];
+
+// Poderes com dano marcados para o ajuste (flags.<módulo>.danoPoder = { ajustar, efeito }); sem a flag o
+// poder não é tocado. `partes` guarda, para cada parte de dano, o dado e a média originais e onde ela
+// mora em system.rolls. Poder cujo dano não é número (@Tormenta...) fica de fora.
+export function lerPoderes(items) {
+  const poderes = [];
+  for (const item of items.filter(i => i.type === 'poder')) {
+    const config = item.flags?.[FLAG]?.danoPoder;
+    const dano = config?.ajustar ? analisarDanoArma(item.system.rolls ?? []) : null;
+    if (!dano || dano.principal == null) continue;
+    const partes = [];
+    item.system.rolls.forEach((roll, indiceRoll) => {
+      if (roll.type !== 'dano' || ehCura(roll)) return;
+      roll.parts.forEach(([formula], indiceParte) => {
+        const media = mediaFormula(formula);
+        if (media > 0) partes.push({ faces: Number(/d(\d+)/i.exec(formula)?.[1] ?? 12), media, indiceRoll, indiceParte });
+      });
+    });
+    poderes.push({
+      id: item._id,
+      nome: item.name,
+      padrao: EXECUCOES_PADRAO.includes(item.system.ativacao?.execucao),
+      efeito: Boolean(config.efeito),
+      indiceRollDano: dano.indiceRoll,
+      principal: dano.principal,
+      secundario: dano.secundario,
+      partes,
+    });
+  }
+  return poderes;
+}
+
 const ORDEM_EMPATE = ['fort', 'refl', 'vont'];
 
 // Testes do maior para o menor total (empate: Fortitude, Reflexos, Vontade).
@@ -72,10 +110,10 @@ export function avisoLimite(armas, nd) {
     : null;
 }
 
-// Poderes e magias com dano: não são alterados, só listados para o mestre revisar.
-export function revisarItens(items) {
+// Poderes e magias com dano que não serão alterados, listados para o mestre revisar (`ajustados`: ids que o ajuste cobre).
+export function revisarItens(items, ajustados = []) {
   return items
-    .filter(i => ['poder', 'magia'].includes(i.type))
+    .filter(i => ['poder', 'magia'].includes(i.type) && !ajustados.includes(i._id))
     .filter(i => i.system.rolls?.some(r => r.type === 'dano' && !ehCura(r)))
     .map(i => i.name);
 }
@@ -83,7 +121,7 @@ export function revisarItens(items) {
 export const AVISO_SEM_ARMAS = 'Nenhuma arma com ataques por rodada maior que zero: o dano não será alterado.';
 
 export function planejarAjuste({
-  tabelas, papel, nd, totais, armas, itens = [],
+  tabelas, papel, nd, totais, armas, poderes = [], itens = [],
   ataquesPorArma = {}, alternativas = {}, ordemResistencias, manterProporcao = true, multiplicadorDano = 1,
 }) {
   const linha = consultar(tabelas, papel, nd);
@@ -95,9 +133,16 @@ export function planejarAjuste({
 
   const avisos = [];
   let dano = null;
-  if (armasFinais.some(a => a.ataques > 0)) {
+  // Poder de ação padrão/completa é alternativo, só em dados; os demais dividem a rodada com as armas, 1 uso cada.
+  const entradasPoderes = poderes.map(p => (p.padrao
+    ? { id: p.id, ataques: 1, secundario: 0, estilo: 'dados', fator: p.efeito ? FATOR_COM_EFEITO : FATOR_SEM_EFEITO, partes: p.partes }
+    : { id: p.id, ataques: 1, secundario: p.secundario, principal: p.principal }));
+  if (armasFinais.some(a => a.ataques > 0) || entradasPoderes.length) {
     // No Bando cada golpe é multiplicado depois (×2, ×4, ×6), então o alvo de cada arma é a fração do dano da tabela.
-    dano = balancearDano({ danoAlvo: linha.Dano / multiplicadorDano, armas: armasFinais, manterProporcao });
+    dano = balancearDano({
+      danoAlvo: linha.Dano / multiplicadorDano, armas: [...armasFinais, ...entradasPoderes], manterProporcao,
+      limiteDados: limiteDados(nd),
+    });
     avisos.push(avisoLimite(armasFinais.filter(a => a.ataques > 0), nd), ...dano.avisos);
   } else {
     avisos.push(AVISO_SEM_ARMAS);
@@ -108,7 +153,7 @@ export function planejarAjuste({
     resistencias: atribuirResistencias(totais, linha, ordemResistencias),
     dano,
     avisos: avisos.filter(Boolean),
-    revisar: revisarItens(itens),
+    revisar: revisarItens(itens, poderes.map(p => p.id)),
     linha,
   };
 }
