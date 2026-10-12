@@ -2,7 +2,7 @@
   "id": "tormenta20-ajuste-nd",
   "title": "Tormenta20: Ajustar ND",
   "description": "Ajusta uma ameaça do sistema Tormenta20 para um ND e papel da tabela de parâmetros: PV, CD, defesa, ataque, resistências e dano por rodada, com prévia antes/depois.",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "authors": [
     {
       "name": "Thiago Cardim",
@@ -46,5 +46,5 @@
   "url": "https://github.com/Thiagorpg-stack/FVTT_Ajustar_Ameacas",
   "bugs": "https://github.com/Thiagorpg-stack/FVTT_Ajustar_Ameacas/issues",
   "manifest": "https://github.com/Thiagorpg-stack/FVTT_Ajustar_Ameacas/releases/latest/download/module.json",
-  "download": "https://github.com/Thiagorpg-stack/FVTT_Ajustar_Ameacas/releases/download/v0.10.1/module.zip"
+  "download": "https://github.com/Thiagorpg-stack/FVTT_Ajustar_Ameacas/releases/download/v0.10.2/module.zip"
 }

@@ -64,6 +64,7 @@
   "T20AJND.Novidade040Conjurador": "Nível de conjurador nos textos: \"lança magias como um clérigo de 10º nível\" passa a usar o ND de destino como nível, mantendo a classe.",
   "T20AJND.Novidade040Circulos": "A prévia sugere círculos de magia liberados (ou acima do permitido) pelo novo nível. Nada é adicionado à ficha.",
   "T20AJND.Novidade040Boasvindas": "Esta mensagem de boas-vindas e de novidades, enviada só ao Mestre.",
+  "T20AJND.Novidade0102Selo": "Correção: o selo (Equilibrado, Alto, Baixo) e o total de dano por rodada de \"Armas e dano\" não contam mais o poder de ação padrão. O Sopro cortado pelo limite de dados deixava o selo em \"Baixo\" mesmo com as armas na tabela.",
   "T20AJND.Novidade0101Pericias": "Correção: ao aplicar o ajuste direto na ficha (sem criar cópia, como o 5e para T20 faz), as perícias voltavam aos valores padrão e as resistências ficavam sem o ajuste. Agora a ficha mantém o atributo e o treino de cada perícia e recebe o valor da tabela.",
   "T20AJND.Novidade0100Poderes": "Poderes com dano: o diálogo ganhou a seção \"Poderes com dano\". Poder de ação padrão ou completa passa a usar só dados (0,6 × o dano da tabela com efeito, 0,7 sem efeito, no máximo ND + 1 dados); os demais dividem o dano da rodada com as armas. Os poderes vêm desmarcados, para o dano das armas não mudar sem aviso, e o texto da descrição também é atualizado.",
   "T20AJND.Novidade0100Api": "API versão 2: simular aceita escolhasPoderes e devolve poderesPrevia. O módulo 5e para T20 0.2.0 exige esta versão.",
