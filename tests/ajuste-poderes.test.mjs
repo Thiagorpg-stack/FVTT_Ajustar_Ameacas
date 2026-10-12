@@ -83,3 +83,53 @@ test('calcularAjuste: com Bando os poderes não são ajustados e ficam na lista 
   assert.equal(mudancaDe(r, a, 'Sopro')['system.rolls'], undefined);
   assert.ok(r.plano.revisar.includes('Sopro'));
 });
+
+const FLAG_PODER = `flags.${FLAG}.danoPoder`;
+
+test('calcularAjuste: a escolha do mestre liga um poder sem flag e a flag é gravada', () => {
+  const a = ficha('dragao');
+  const id = poder(a, 'Sopro')._id;
+  const r = ajustar(a, '11', { escolhasPoderes: { [id]: { ajustar: true } } });
+  const m = mudancaDe(r, a, 'Sopro');
+  assert.equal(m['system.rolls'][0].parts[0][0], '12d12');
+  assert.deepEqual(m[FLAG_PODER], { ajustar: true, efeito: true });
+});
+
+test('calcularAjuste: escolher "sem efeito" usa 0,7 (ND 7: 7d12) e grava efeito false', () => {
+  const a = ficha('dragao');
+  const id = poder(a, 'Sopro')._id;
+  const m = mudancaDe(ajustar(a, '7', { escolhasPoderes: { [id]: { ajustar: true, efeito: false } } }), a, 'Sopro');
+  assert.equal(m['system.rolls'][0].parts[0][0], '7d12');
+  assert.deepEqual(m[FLAG_PODER], { ajustar: true, efeito: false });
+});
+
+test('calcularAjuste: desmarcar um poder que tinha flag deixa a rolagem e grava ajustar false', () => {
+  const a = comPoder('Sopro', { ajustar: true, efeito: true });
+  const m = mudancaDe(ajustar(a, '11', { escolhasPoderes: { [poder(a, 'Sopro')._id]: { ajustar: false } } }), a, 'Sopro');
+  assert.equal(m['system.rolls'], undefined);
+  assert.deepEqual(m[FLAG_PODER], { ajustar: false, efeito: true });
+});
+
+test('calcularAjuste: poder sem flag e não escolhido não recebe flag', () => {
+  const a = ficha('dragao');
+  assert.equal(mudancaDe(ajustar(a, '11'), a, 'Sopro')[FLAG_PODER], undefined);
+});
+
+test('calcularAjuste: poderesPrevia traz antes e depois de cada poder com dano', () => {
+  const ligado = comPoder('Sopro', { ajustar: true, efeito: true });
+  assert.deepEqual(ajustar(ligado, '11').poderesPrevia, [
+    { id: poder(ligado, 'Sopro')._id, nome: 'Sopro', padrao: true, ajustar: true, efeito: true, antes: '16d12', depois: '12d12' },
+  ]);
+  const desligado = ficha('dragao');
+  assert.deepEqual(ajustar(desligado, '11').poderesPrevia, [
+    { id: poder(desligado, 'Sopro')._id, nome: 'Sopro', padrao: true, ajustar: false, efeito: true, antes: '16d12', depois: null },
+  ]);
+});
+
+test('calcularAjuste: com Bando a prévia mostra os poderes desligados e nenhuma flag é gravada', () => {
+  const a = comPoder('Sopro', { ajustar: true, efeito: true });
+  const r = ajustar(a, '5', { templates: { bando: { escala: '10-20', aumentoND: 2 } } });
+  assert.equal(r.poderesPrevia[0].ajustar, false);
+  assert.equal(r.poderesPrevia[0].depois, null);
+  assert.equal(mudancaDe(r, a, 'Sopro')[FLAG_PODER], undefined);
+});

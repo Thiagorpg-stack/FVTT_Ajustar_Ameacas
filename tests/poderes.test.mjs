@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { lerArmas, lerPoderes, planejarAjuste, revisarItens } from '../scripts/calculo.js';
+import { lerArmas, lerPoderes, planejarAjuste, revisarItens, detectarEfeito } from '../scripts/calculo.js';
 import { ficha, totaisResistencias } from './helpers.mjs';
 
 const tabelas = JSON.parse(readFileSync(new URL('../data/tables.json', import.meta.url), 'utf8'));
@@ -25,13 +25,34 @@ function plano(a, nd, extra = {}) {
   });
 }
 
-test('lerPoderes: poder sem a flag não é lido (Sopro do Dragão)', () => {
-  assert.deepEqual(lerPoderes(ficha('dragao').items), []);
+test('lerPoderes: lista todo poder com dano; sem a flag ele vem desligado (Sopro do Dragão)', () => {
+  const lista = lerPoderes(ficha('dragao').items);
+  assert.deepEqual(lista.map(p => [p.nome, p.ajustar, p.temFlag]), [['Sopro', false, false]]);
 });
 
-test('lerPoderes: flag com ajustar false também não é lido', () => {
+test('lerPoderes: flag com ajustar false vem desligada, e a escolha do mestre vale mais que a flag', () => {
   const a = comPoder('dragao', 'Sopro', { ajustar: false, efeito: true });
-  assert.deepEqual(lerPoderes(a.items), []);
+  assert.equal(lerPoderes(a.items)[0].ajustar, false);
+  assert.equal(lerPoderes(a.items)[0].temFlag, true);
+  const escolhido = lerPoderes(a.items, { [idDe(a, 'Sopro')]: { ajustar: true, efeito: false } })[0];
+  assert.deepEqual([escolhido.ajustar, escolhido.efeito], [true, false]);
+});
+
+test('lerPoderes: sem a configuração de efeito, detecta pelo texto (Sopro do Dragão tem CD e metade)', () => {
+  assert.equal(lerPoderes(ficha('dragao').items)[0].efeito, true);
+});
+
+test('detectarEfeito: teste de resistência, metade, área ou condição = com efeito', () => {
+  assert.equal(detectarEfeito('Todas as criaturas em um cone de 15m sofrem 16d12 (Ref CD 40 reduz à metade).'), true);
+  assert.equal(detectarEfeito('Criaturas perdem 6d12 pontos de vida e ficam enjoadas.'), true);
+  assert.equal(detectarEfeito('The target takes 9 (2d8) damage and is knocked prone.'), true);
+  assert.equal(detectarEfeito('Each creature must make a Constitution saving throw.'), true);
+});
+
+test('detectarEfeito: dano simples a um alvo é sem efeito (Dilacerar do Troll)', () => {
+  assert.equal(detectarEfeito(ficha('troll').items.find(i => i.name === 'Dilacerar').system.description.value), false);
+  assert.equal(detectarEfeito('causa 2d6 pontos de dano'), false);
+  assert.equal(detectarEfeito(undefined), false);
 });
 
 test('lerPoderes: Sopro (ação padrão, 16d12 de fogo) devolve partes, onde reescrever e o efeito', () => {
@@ -46,9 +67,9 @@ test('lerPoderes: Sopro (ação padrão, 16d12 de fogo) devolve partes, onde ree
 test('lerPoderes: ação completa conta como padrão; livre não', () => {
   const dano = (item) => { item.system.rolls = [{ name: 'Dano', type: 'dano', parts: [['2d6', 'fogo', '']] }]; };
   const completa = comPoder('dragao', 'Varrer', { ajustar: true, efeito: false }, (i) => { dano(i); i.system.ativacao.execucao = 'full'; });
-  assert.equal(lerPoderes(completa.items)[0].padrao, true);
+  assert.equal(lerPoderes(completa.items).find(p => p.nome === 'Varrer').padrao, true);
   const livre = comPoder('dragao', 'Varrer', { ajustar: true, efeito: false }, (i) => { dano(i); i.system.ativacao.execucao = 'free'; });
-  assert.equal(lerPoderes(livre.items)[0].padrao, false);
+  assert.equal(lerPoderes(livre.items).find(p => p.nome === 'Varrer').padrao, false);
 });
 
 test('lerPoderes: duas partes de dano (3d8 + 2d6) viram duas partes com o dado de cada uma', () => {

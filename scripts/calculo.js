@@ -49,14 +49,29 @@ export const FATOR_COM_EFEITO = 0.6;
 export const FATOR_SEM_EFEITO = 0.7;
 const EXECUCOES_PADRAO = ['action', 'full'];
 
-// Poderes com dano marcados para o ajuste (flags.<módulo>.danoPoder = { ajustar, efeito }); sem a flag o
-// poder não é tocado. `partes` guarda, para cada parte de dano, o dado e a média originais e onde ela
-// mora em system.rolls. Poder cujo dano não é número (@Tormenta...) fica de fora.
-export function lerPoderes(items) {
+// Sinais de que o poder tem efeito além do dano (condição, teste de resistência, metade, área). É só o
+// padrão: o mestre confere e muda no diálogo.
+const SINAIS_DE_EFEITO = new RegExp([
+  String.raw`\bCD\s*\d+`, String.raw`\bDC\s*\d+`, 'saving throw', 'metade', 'todas as criaturas',
+  String.raw`\b(?:cone|esfera|linha|cubo|cilindro|explos[ãa]o|[áa]rea)\b`,
+  String.raw`(?<!\p{L})(?:abalad|alquebrad|apavorad|atordoad|caíd|cego|confus|debilitad|desprevenid|enjoad|enredad|`
+    + 'envenenad|esmorecid|exaust|fascinad|fatigad|frustrad|imóve|inconscient|indefes|lent[oa]|ofuscad|'
+    + 'paralisad|pasm|petrificad|sangrando|surd|vulneráve|em chamas|agarrad|derrubad|'
+    + 'prone|stunned|blinded|poisoned|frightened|paralyzed|restrained|grappled)',
+].join('|'), 'iu');
+export const detectarEfeito = (texto) => SINAIS_DE_EFEITO.test(texto ?? '');
+
+// Poderes com dano numérico, cada um com a escolha de ajustar ("ajustar") e se tem efeito ("efeito"). A
+// escolha vem de `escolhas[id]` (o diálogo) ou da flag do item (flags.<módulo>.danoPoder = { ajustar, efeito });
+// sem nenhuma das duas o poder não é ajustado e o efeito é detectado pelo texto. `partes` guarda, para cada
+// parte de dano, o dado e a média originais e onde ela mora em system.rolls. Poder cujo dano não é
+// número (@Tormenta...) fica de fora.
+export function lerPoderes(items, escolhas = {}) {
   const poderes = [];
   for (const item of items.filter(i => i.type === 'poder')) {
-    const config = item.flags?.[FLAG]?.danoPoder;
-    const dano = config?.ajustar ? analisarDanoArma(item.system.rolls ?? []) : null;
+    const flag = item.flags?.[FLAG]?.danoPoder;
+    const config = { ...flag, ...escolhas[item._id] };
+    const dano = analisarDanoArma(item.system.rolls ?? []);
     if (!dano || dano.principal == null) continue;
     const partes = [];
     item.system.rolls.forEach((roll, indiceRoll) => {
@@ -70,7 +85,9 @@ export function lerPoderes(items) {
       id: item._id,
       nome: item.name,
       padrao: EXECUCOES_PADRAO.includes(item.system.ativacao?.execucao),
-      efeito: Boolean(config.efeito),
+      ajustar: Boolean(config.ajustar),
+      efeito: config.efeito ?? detectarEfeito(item.system.description?.value),
+      temFlag: Boolean(flag),
       indiceRollDano: dano.indiceRoll,
       principal: dano.principal,
       secundario: dano.secundario,
@@ -134,7 +151,8 @@ export function planejarAjuste({
   const avisos = [];
   let dano = null;
   // Poder de ação padrão/completa é alternativo, só em dados; os demais dividem a rodada com as armas, 1 uso cada.
-  const entradasPoderes = poderes.map(p => (p.padrao
+  const ajustados = poderes.filter(p => p.ajustar);
+  const entradasPoderes = ajustados.map(p => (p.padrao
     ? { id: p.id, ataques: 1, secundario: 0, estilo: 'dados', fator: p.efeito ? FATOR_COM_EFEITO : FATOR_SEM_EFEITO, partes: p.partes }
     : { id: p.id, ataques: 1, secundario: p.secundario, principal: p.principal }));
   if (armasFinais.some(a => a.ataques > 0) || entradasPoderes.length) {
@@ -153,7 +171,7 @@ export function planejarAjuste({
     resistencias: atribuirResistencias(totais, linha, ordemResistencias),
     dano,
     avisos: avisos.filter(Boolean),
-    revisar: revisarItens(itens, poderes.map(p => p.id)),
+    revisar: revisarItens(itens, ajustados.map(p => p.id)),
     linha,
   };
 }

@@ -10,7 +10,7 @@ import {
 import { nivelDoND, sugerirCirculos } from './circulos.js';
 import { faixaDeHabilidades, avisosDePatamar } from './patamares.js';
 import {
-  aplicarMudancas, aplicarTemplates, ehItemDeTemplate, idAleatorio, lerMarcador, resolverBando, restaurarDados,
+  FLAG, aplicarMudancas, aplicarTemplates, ehItemDeTemplate, idAleatorio, lerMarcador, resolverBando, restaurarDados,
 } from './templates.js';
 
 const NUMERO = /^[+-]?\d+(\.\d+)?$/;
@@ -68,7 +68,7 @@ export function calcularAjuste({
   dados: dadosReais, tabelas, nd, papel, medir,
   ataquesPorArma = {}, alternativas = {}, ordemResistencias,
   atualizarCDs = true, atualizarTextoAtaques = true, atualizarNivelConjurador = true, manterProporcao = true,
-  templates = {}, gerarId = idAleatorio,
+  templates = {}, gerarId = idAleatorio, escolhasPoderes = {},
 }) {
   // O que o Enxame alterou (ataques das armas, linha de ataque) volta ao original antes do cálculo.
   const dados = restaurarDados(dadosReais);
@@ -87,7 +87,8 @@ export function calcularAjuste({
   const mult = bando?.mult ?? 1;
   // O Bando multiplica o dano das armas, que são guardadas e restauradas pelo marcador; os poderes não são,
   // então com o Bando ativo ficam como estão e entram na lista de revisão.
-  const poderes = bando ? [] : lerPoderes(dados.items);
+  const candidatos = lerPoderes(dados.items, escolhasPoderes).map(p => (bando ? { ...p, ajustar: false } : p));
+  const poderes = candidatos.filter(p => p.ajustar);
   const plano = planejarAjuste({
     tabelas, papel, nd: ndTabela, multiplicadorDano: mult, armas, poderes, itens: dados.items,
     totais: { fort: antes.pericias.fort, refl: antes.pericias.refl, vont: antes.pericias.vont },
@@ -133,22 +134,37 @@ export function calcularAjuste({
   });
 
   // Poderes ajustados: a fórmula nova entra na rolagem e as trocas (de → para) voltam para o texto.
+  // A escolha (ajustar, efeito) é gravada na flag do item; com o Bando nada é gravado.
   const trocasDeTexto = new Map();
-  for (const poder of poderes) {
-    const calculado = plano.dano?.porArma[poder.id];
-    if (!calculado) continue;
-    const rolls = structuredClone(dados.items.find(i => i._id === poder.id).system.rolls);
-    const trocas = poder.padrao
-      ? poder.partes.map((parte, i) => ({ ...parte, para: calculado.formulas[i] }))
-      : [{ indiceRoll: poder.indiceRollDano, indiceParte: 0, para: calculado.formula }];
-    trocasDeTexto.set(poder.id, trocas.map(({ indiceRoll, indiceParte, para }) => {
-      const parte = rolls[indiceRoll].parts[indiceParte];
-      const de = parte[0];
-      parte[0] = para;
-      return { de, para };
-    }));
-    itemUpdates.push({ _id: poder.id, 'system.rolls': rolls });
-  }
+  const formulasDe = (rolls, partes) => partes.map(({ indiceRoll, indiceParte }) => rolls[indiceRoll].parts[indiceParte][0]).join(' + ');
+  const poderesPrevia = candidatos.map((poder) => {
+    const original = dados.items.find(i => i._id === poder.id).system.rolls;
+    const previa = {
+      id: poder.id, nome: poder.nome, padrao: poder.padrao, ajustar: poder.ajustar, efeito: poder.efeito,
+      antes: formulasDe(original, poder.partes), depois: null,
+    };
+    const mudanca = { _id: poder.id };
+    if (!bando && (poder.ajustar || poder.temFlag)) {
+      mudanca[`flags.${FLAG}.danoPoder`] = { ajustar: poder.ajustar, efeito: poder.efeito };
+    }
+    const calculado = poder.ajustar && plano.dano?.porArma[poder.id];
+    if (calculado) {
+      const rolls = structuredClone(original);
+      const trocas = poder.padrao
+        ? poder.partes.map((parte, i) => ({ ...parte, para: calculado.formulas[i] }))
+        : [{ indiceRoll: poder.indiceRollDano, indiceParte: 0, para: calculado.formula }];
+      trocasDeTexto.set(poder.id, trocas.map(({ indiceRoll, indiceParte, para }) => {
+        const parte = rolls[indiceRoll].parts[indiceParte];
+        const de = parte[0];
+        parte[0] = para;
+        return { de, para };
+      }));
+      mudanca['system.rolls'] = rolls;
+      previa.depois = formulasDe(rolls, poder.partes);
+    }
+    if (Object.keys(mudanca).length > 1) itemUpdates.push(mudanca);
+    return previa;
+  });
 
   const textos = { cds: [], ataques: [], conjurador: [] };
   const nivelConjurador = nivelDoND(nd);
@@ -247,7 +263,7 @@ export function calcularAjuste({
   }
 
   return {
-    plano, update, itemUpdates, antes, depois, avisos, textos, sugestoes, patamar,
+    plano, update, itemUpdates, antes, depois, avisos, textos, sugestoes, patamar, poderesPrevia,
     armasUpdates,
     itensCriar: [...recriadas.values(), ...modelo.itensCriar], itensRemover: modelo.itensRemover,
     templates: { linhas: modelo.linhas, notas: modelo.notas, multDano: mult },
