@@ -2,6 +2,7 @@
 import { lerArmas, lerPoderes, ordenarResistencias } from './calculo.js';
 import { mediaFormula } from './dano.js';
 import { aplicarAjuste, criarMedidor, simular, ID_MODULO } from './aplicar.js';
+import { gruposDasArmas } from './ajuste.js';
 import { aumentoPadrao, lerMarcador, restaurarDados } from './templates.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -143,7 +144,7 @@ export class DialogoAjusteND extends HandlebarsApplicationMixin(ApplicationV2) {
       };
     });
 
-    const grupos = r.plano.dano?.grupos ?? [];
+    const grupos = gruposDasArmas(r.plano.dano?.grupos ?? [], r.poderesPrevia);
     const ativas = linhasArmas.filter(a => a.ataques > 0);
     const somaCompartilhadas = ativas.filter(a => !a.alternativa).reduce((s, a) => s + a.ataques, 0);
     const maiorAlternativa = Math.max(0, ...ativas.filter(a => a.alternativa).map(a => a.ataques));

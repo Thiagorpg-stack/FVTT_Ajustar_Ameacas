@@ -45,6 +45,13 @@ export function reescreverRolls(rolls, { indiceRollDano, formula, multiplicador 
 const caminhoOutros = (pericia) => `system.pericias.${pericia}.outros`;
 const CAMINHO_DEFESA = 'system.attributes.defesa.base';
 
+// Grupos de dano que contam para o selo e o total da rodada das armas. O poder de ação padrão é balanceado à
+// parte (fator × tabela, só dados) e o aviso do limite de dados já o explica; poder que divide a rodada fica no grupo.
+export function gruposDasArmas(grupos, poderesPrevia = []) {
+  const padrao = new Set(poderesPrevia.filter(p => p.ajustar && p.padrao).map(p => p.id));
+  return grupos.filter(g => !g.ids.every(id => padrao.has(id)));
+}
+
 // O sistema Tormenta20 (1.6.6) preenche com os valores padrão os campos que faltam de uma perícia atualizada
 // por caminho parcial ("system.pericias.fort.outros"): a ficha perdia o atributo, o treino etc. Na gravação
 // direta (sem cópia) o update leva o system.pericias inteiro: os valores atuais mais as mudanças.
