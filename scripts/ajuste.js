@@ -1,11 +1,11 @@
 // Monta e calibra o ajuste de uma ficha. Sem dependência do Foundry: quem mede o que a ficha
 // mostra (o clone preparado, no Foundry) entra como a função `medir`.
-import { lerArmas, planejarAjuste, totalAtaques, AVISO_SEM_ARMAS } from './calculo.js';
+import { lerArmas, lerPoderes, planejarAjuste, totalAtaques, AVISO_SEM_ARMAS } from './calculo.js';
 import { normalizarND } from './tabelas.js';
 import { ehCura, mediaFormula } from './dano.js';
 import {
   atualizarCDs as trocarCDs, atualizarTextoAtaques as trocarTextoAtaques,
-  atualizarNivelConjurador as trocarNivelConjurador,
+  atualizarNivelConjurador as trocarNivelConjurador, atualizarDanoPoder,
 } from './textos.js';
 import { nivelDoND, sugerirCirculos } from './circulos.js';
 import { faixaDeHabilidades, avisosDePatamar } from './patamares.js';
@@ -85,8 +85,11 @@ export function calcularAjuste({
     : null;
   const ndTabela = bando?.ndEfetivo ?? nd;
   const mult = bando?.mult ?? 1;
+  // O Bando multiplica o dano das armas, que são guardadas e restauradas pelo marcador; os poderes não são,
+  // então com o Bando ativo ficam como estão e entram na lista de revisão.
+  const poderes = bando ? [] : lerPoderes(dados.items);
   const plano = planejarAjuste({
-    tabelas, papel, nd: ndTabela, multiplicadorDano: mult, armas, itens: dados.items,
+    tabelas, papel, nd: ndTabela, multiplicadorDano: mult, armas, poderes, itens: dados.items,
     totais: { fort: antes.pericias.fort, refl: antes.pericias.refl, vont: antes.pericias.vont },
     ataquesPorArma, alternativas, ordemResistencias, manterProporcao,
   });
@@ -129,6 +132,24 @@ export function calcularAjuste({
     };
   });
 
+  // Poderes ajustados: a fórmula nova entra na rolagem e as trocas (de → para) voltam para o texto.
+  const trocasDeTexto = new Map();
+  for (const poder of poderes) {
+    const calculado = plano.dano?.porArma[poder.id];
+    if (!calculado) continue;
+    const rolls = structuredClone(dados.items.find(i => i._id === poder.id).system.rolls);
+    const trocas = poder.padrao
+      ? poder.partes.map((parte, i) => ({ ...parte, para: calculado.formulas[i] }))
+      : [{ indiceRoll: poder.indiceRollDano, indiceParte: 0, para: calculado.formula }];
+    trocasDeTexto.set(poder.id, trocas.map(({ indiceRoll, indiceParte, para }) => {
+      const parte = rolls[indiceRoll].parts[indiceParte];
+      const de = parte[0];
+      parte[0] = para;
+      return { de, para };
+    }));
+    itemUpdates.push({ _id: poder.id, 'system.rolls': rolls });
+  }
+
   const textos = { cds: [], ataques: [], conjurador: [] };
   const nivelConjurador = nivelDoND(nd);
   const sugestoes = [];
@@ -162,6 +183,13 @@ export function calcularAjuste({
       if (!mudanca) itemUpdates.push(mudanca = { _id: item._id });
       mudanca['system.description.value'] = texto;
     }
+  }
+
+  for (const [id, trocas] of trocasDeTexto) {
+    const mudanca = itemUpdates.find(u => u._id === id);
+    const atual = mudanca['system.description.value'] ?? dados.items.find(i => i._id === id).system.description?.value;
+    const texto = atualizarDanoPoder(atual, trocas);
+    if (texto !== atual) mudanca['system.description.value'] = texto;
   }
 
   // Atualiza as linhas de ataque (Corpo a Corpo / À Distância) que já têm texto.

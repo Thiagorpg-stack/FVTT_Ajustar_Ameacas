@@ -1,4 +1,5 @@
 // Textos escritos à mão nas fichas: a CD dentro de descrições e as linhas de ataque. Sem dependência do Foundry.
+import { mediaFormula } from './dano.js';
 
 const escapar = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -56,4 +57,37 @@ export function atualizarTextoAtaques(texto, armas) {
     });
   }
   return resultado;
+}
+
+const chaveFormula = (f) => f.replace(/\s+/g, '').toLowerCase();
+// "3d8+3" casa também como "3d8 + 3" no texto.
+const formulaFlexivel = (f) => (f.match(/\d+|[a-z]+|[+-]/gi) ?? []).map(escapar).join('\\s*');
+
+// Troca no texto de um poder a fórmula de cada parte de dano: "16 (3d8 + 3 Bludgeoning)" (estilo 5e, com
+// a média e o tipo) vira "22 (5d8 Bludgeoning)"; "sofrem 16d12 pontos" (estilo T20) só troca a fórmula.
+// partes: [{ de, para, multiplicador? }] com as fórmulas antiga e nova. A troca é de uma passada só, então
+// uma fórmula nova não é trocada de novo.
+// shortcut: partes com a mesma fórmula antiga usam a primeira; separar casando pela ordem no texto, se aparecer.
+export function atualizarDanoPoder(texto, partes) {
+  if (!texto || !partes.length) return texto ?? '';
+  const porChave = new Map();
+  for (const p of partes) if (!porChave.has(chaveFormula(p.de))) porChave.set(chaveFormula(p.de), p);
+  const alternativas = [...porChave.keys()].sort((a, b) => b.length - a.length).map(formulaFlexivel).join('|');
+  const nova = (p) => `${p.para}${p.multiplicador > 1 ? ` ×${p.multiplicador}` : ''}`;
+
+  // As saídas ficam guardadas até o fim para uma troca não ser vista pela seguinte.
+  const saidas = [];
+  const guardar = (s) => `\u0000${saidas.push(s) - 1}\u0000`;
+  const estilo5e = new RegExp(`(\\d+(?:[.,]\\d+)?)\\s*\\(\\s*(${alternativas})(?!\\d)([^)]*)\\)`, 'gi');
+  const solta = new RegExp(`(?<![\\w])(${alternativas})(?!\\d)`, 'gi');
+
+  return texto
+    .replace(estilo5e, (_, __, formula, resto) => {
+      const p = porChave.get(chaveFormula(formula));
+      const media = Math.floor(mediaFormula(p.para) * (p.multiplicador ?? 1));
+      const tipo = resto.trim();
+      return guardar(`${media} (${nova(p)}${tipo ? ` ${tipo}` : ''})`);
+    })
+    .replace(solta, (formula) => guardar(nova(porChave.get(chaveFormula(formula)))))
+    .replace(/\u0000(\d+)\u0000/g, (_, i) => saidas[i]);
 }
