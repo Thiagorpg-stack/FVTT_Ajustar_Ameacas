@@ -1,4 +1,5 @@
 // Cálculo de dano por rodada (auto-balanceamento da calculadora). Sem dependência do Foundry.
+import { valorND } from './tabelas.js';
 
 const TIPOS_CURA = ['curatpv', 'curapm'];
 const FORMULA_VALIDA = /^[+-]?(?:\d*d\d+|\d+)(?:[+-](?:\d*d\d+|\d+))*$/i;
@@ -27,6 +28,29 @@ export function gerarFormulaDano(danoMedio) {
   const bonus = Math.round(danoMedio - n * 3.5);
   if (bonus === 0) return `${n}d6`;
   return bonus > 0 ? `${n}d6+${bonus}` : `${n}d6${bonus}`;
+}
+
+// Máximo de dados do dano de um poder de ação padrão: ND + 1 (ND 1/4 e 1/2 contam como 0).
+export const limiteDados = (nd) => Math.floor(valorND(nd)) + 1;
+
+// Fórmula só com dados, sem bônus, para um poder de ação padrão. `partes` ([{ faces, media }], a média
+// original de cada parte de dano) reparte o alvo na proporção das médias; sem partes usa d12. O limite
+// vale para o total e corta primeiro a parte que mais contribui (cada parte mantém ao menos 1 dado).
+export function formulaSoDados({ alvo, partes = [{ faces: 12, media: 1 }], limite = Infinity }) {
+  const soma = partes.reduce((s, p) => s + p.media, 0);
+  const dados = partes.map(p => Math.max(1, Math.round(alvo * p.media / soma / ((p.faces + 1) / 2))));
+  const total = () => dados.reduce((s, n) => s + n, 0);
+  const cortado = total() > limite;
+  while (total() > limite) {
+    const maior = dados
+      .map((n, i) => ({ i, n, peso: n * (partes[i].faces + 1) / 2 }))
+      .filter(x => x.n > 1)
+      .sort((a, b) => b.peso - a.peso)[0];
+    if (!maior) break;
+    dados[maior.i]--;
+  }
+  const formulas = partes.map((p, i) => `${dados[i]}d${p.faces}`);
+  return { formulas, formula: formulas.join('+'), cortado };
 }
 
 // Rolagens de cura (PV/PM temporários etc.) não são dano e nunca são reescritas.
@@ -61,23 +85,35 @@ export function alertaEquilibrio(obtido, sugerido) {
 }
 
 // armas: [{ id, ataques, secundario, principal?, alternativa? }]. Armas "alternativas" são balanceadas
-// cada uma contra o dano total; as demais dividem o dano entre si.
+// cada uma contra o dano total; as demais dividem o dano entre si. Poder de ação padrão/completa entra com
+// estilo 'dados' (sempre alternativo): recebe `fator` × o dano total, só em dados (`partes`, limite `limiteDados`).
 // Com `manterProporcao` (padrão) o dano de cada golpe segue a proporção da ficha original (peso =
 // principal + secundário); o dano secundário fica fixo e só o principal é recalculado. Sem o dano
 // principal de alguma arma, ou com manterProporcao false, todos os golpes recebem a mesma fórmula.
-export function balancearDano({ danoAlvo, armas, manterProporcao = true }) {
+export function balancearDano({ danoAlvo, armas, manterProporcao = true, limiteDados = Infinity }) {
   const ativas = armas.filter(a => a.ataques > 0);
   if (ativas.length === 0) throw new Error('Nenhuma arma com ataques por rodada maior que zero');
 
-  const compartilhadas = ativas.filter(a => !a.alternativa);
+  const alternativa = (a) => a.alternativa || a.estilo === 'dados';
+  const compartilhadas = ativas.filter(a => !alternativa(a));
   const grupos = [
     ...(compartilhadas.length ? [compartilhadas] : []),
-    ...ativas.filter(a => a.alternativa).map(a => [a]),
+    ...ativas.filter(alternativa).map(a => [a]),
   ];
 
   const porArma = {};
   const avisos = [];
   const resumoGrupos = grupos.map((grupo) => {
+    if (grupo[0].estilo === 'dados') {
+      const [a] = grupo;
+      const alvo = danoAlvo * (a.fator ?? 1);
+      const { formula, formulas, cortado } = formulaSoDados({ alvo, partes: a.partes, limite: limiteDados });
+      const obtido = mediaFormula(formula);
+      porArma[a.id] = { formula, formulas, danoPorGolpe: obtido };
+      if (cortado) avisos.push(`O limite de ${limiteDados} dados deixou o dano do poder em ${obtido}, abaixo do alvo (${alvo}).`);
+      return { ids: [a.id], obtido, alerta: alertaEquilibrio(obtido, alvo) };
+    }
+
     const totalAtaques = grupo.reduce((s, a) => s + a.ataques, 0);
     const existente = grupo.reduce((s, a) => s + a.ataques * a.secundario, 0);
     const restante = Math.max(0, danoAlvo - existente);
