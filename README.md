@@ -4,6 +4,10 @@ Módulo para Foundry VTT (sistema não oficial [Tormenta20](https://gitlab.com/v
 
 Na ficha de uma ameaça (ou no menu de contexto do diretório de atores), o mestre clica em **Ajustar ND**, escolhe o ND-alvo e o papel, confere a prévia antes → depois e aplica.
 
+[![Video Title](https://img.youtube.com/vi/7cCv-hW5-Ew/0.jpg)](https://www.youtube.com/watch?7cCv-hW5-Ew)
+[![Video Title](https://img.youtube.com/vi/vGGXkWhMaUU/0.jpg)](https://www.youtube.com/watch?vGGXkWhMaUU)
+[![Video Title](https://img.youtube.com/vi/rpTyYiP_cd0/0.jpg)](https://www.youtube.com/watch?rpTyYiP_cd0)
+
 ## O que o módulo ajusta
 
 | Estatística | Como |
