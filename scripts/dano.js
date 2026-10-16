@@ -103,6 +103,13 @@ export function balancearDano({ danoAlvo, armas, manterProporcao = true, limiteD
 
   const porArma = {};
   const avisos = [];
+  // Poder só de dados (`faces`) que divide a rodada mantém as faces: só muda a quantidade de dados (teto `limiteDados`).
+  const formulaDoGolpe = (a, danoPorGolpe) => {
+    if (!a.faces) return gerarFormulaDano(danoPorGolpe);
+    const { formula, cortado } = formulaSoDados({ alvo: danoPorGolpe, partes: [{ faces: a.faces, media: 1 }], limite: limiteDados });
+    if (cortado) avisos.push(`O limite de ${limiteDados} dados deixou o dano do poder em ${mediaFormula(formula)}, abaixo do alvo (${danoPorGolpe}).`);
+    return formula;
+  };
   const resumoGrupos = grupos.map((grupo) => {
     if (grupo[0].estilo === 'dados') {
       const [a] = grupo;
@@ -128,12 +135,11 @@ export function balancearDano({ danoAlvo, armas, manterProporcao = true, limiteD
       const escala = danoAlvo / grupo.reduce((s, a, i) => s + a.ataques * pesos[i], 0);
       grupo.forEach((a, i) => {
         const danoPorGolpe = Math.max(0, escala * pesos[i] - a.secundario);
-        porArma[a.id] = { formula: gerarFormulaDano(danoPorGolpe), danoPorGolpe };
+        porArma[a.id] = { formula: formulaDoGolpe(a, danoPorGolpe), danoPorGolpe };
       });
     } else {
       const danoPorGolpe = restante / totalAtaques;
-      const formula = gerarFormulaDano(danoPorGolpe);
-      for (const a of grupo) porArma[a.id] = { formula, danoPorGolpe };
+      for (const a of grupo) porArma[a.id] = { formula: formulaDoGolpe(a, danoPorGolpe), danoPorGolpe };
     }
 
     const obtido = grupo.reduce(

@@ -73,6 +73,9 @@ export function lerPoderes(items, escolhas = {}) {
     const config = { ...flag, ...escolhas[item._id] };
     const dano = analisarDanoArma(item.system.rolls ?? []);
     if (!dano || dano.principal == null) continue;
+    // Dano principal só em dados ("6d12"): ao ajustar, continua só em dados com as mesmas faces, sem bônus fixo.
+    const formulaPrincipal = item.system.rolls[dano.indiceRoll].parts[0]?.[0] ?? '';
+    const soDados = /^\s*\d*d\d+\s*$/i.test(formulaPrincipal);
     const partes = [];
     item.system.rolls.forEach((roll, indiceRoll) => {
       if (roll.type !== 'dano' || ehCura(roll)) return;
@@ -88,6 +91,8 @@ export function lerPoderes(items, escolhas = {}) {
       ajustar: Boolean(config.ajustar),
       efeito: config.efeito ?? detectarEfeito(item.system.description?.value),
       temFlag: Boolean(flag),
+      soDados,
+      faces: soDados ? Number(/d(\d+)/i.exec(formulaPrincipal)[1]) : undefined,
       indiceRollDano: dano.indiceRoll,
       principal: dano.principal,
       secundario: dano.secundario,
@@ -154,7 +159,7 @@ export function planejarAjuste({
   const ajustados = poderes.filter(p => p.ajustar);
   const entradasPoderes = ajustados.map(p => (p.padrao
     ? { id: p.id, ataques: 1, secundario: 0, estilo: 'dados', fator: p.efeito ? FATOR_COM_EFEITO : FATOR_SEM_EFEITO, partes: p.partes }
-    : { id: p.id, ataques: 1, secundario: p.secundario, principal: p.principal }));
+    : { id: p.id, ataques: 1, secundario: p.secundario, principal: p.principal, faces: p.faces }));
   if (armasFinais.some(a => a.ataques > 0) || entradasPoderes.length) {
     // No Bando cada golpe é multiplicado depois (×2, ×4, ×6), então o alvo de cada arma é a fração do dano da tabela.
     dano = balancearDano({
