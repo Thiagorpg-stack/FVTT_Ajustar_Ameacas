@@ -26,7 +26,13 @@ jobs:
       - name: Empacotar o módulo
         run: zip -r module.zip module.json README.md LICENSE scripts styles templates lang data
 
+      - name: Notas da release (a seção da versão em CHANGELOG.md)
+        run: |
+          VERSAO="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSAO" '$0 == "## " v {achou=1; next} /^## / {achou=0} achou' CHANGELOG.md > notas.md
+          test -s notas.md || { echo "CHANGELOG.md precisa de uma seção '## $VERSAO' com tópicos"; exit 1; }
+
       - name: Publicar a release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "$GITHUB_REF_NAME" module.zip module.json --title "$GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" module.zip module.json --title "$GITHUB_REF_NAME" --notes-file notas.md
