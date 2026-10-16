@@ -44,7 +44,7 @@ test('Enxame esvazia a linha de Corpo a Corpo (o poder Enxame já descreve o ata
   assert.equal(r.update['system.detalhes.ataquescac'], '');
 });
 
-test('Enxame acrescenta as imunidades ao texto e aos campos estruturados (ic.custom)', () => {
+test('Enxame acrescenta as imunidades só ao texto (nada em ic.custom, para a ficha não mostrar duas vezes)', () => {
   const f = ficha('sacerdote');
   const r = ajustar(f, '10', enxame);
   const texto = r.update['system.detalhes.resistencias'];
@@ -52,12 +52,12 @@ test('Enxame acrescenta as imunidades ao texto e aos campos estruturados (ic.cus
   for (const termo of ['imunidade a acertos críticos', 'imunidade a dano de precisão', 'imunidade a flanqueamento', 'imunidade a manobras de combate']) {
     assert.match(texto, new RegExp(termo));
   }
-  assert.equal(r.update['system.tracos.ic.custom'], 'Acertos críticos, Dano de precisão, Flanqueamento, Manobras de combate');
+  assert.equal('system.tracos.ic.custom' in r.update, false);
 });
 
-test('ic.custom não repete o que a ficha já tem (Glop de Sangue já é imune a críticos)', () => {
+test('o ic.custom da ficha não é tocado pelo Enxame (Glop de Sangue já tem o dele)', () => {
   const r = ajustar(ficha('glop'), '5', enxame);
-  assert.equal(r.update['system.tracos.ic.custom'], 'Acertos críticos, Dano de precisão, Flanqueamento, Manobras de combate');
+  assert.equal('system.tracos.ic.custom' in r.update, false);
 });
 
 test('o marcador guarda as armas inteiras, o texto de ataque e o ic.custom originais', () => {

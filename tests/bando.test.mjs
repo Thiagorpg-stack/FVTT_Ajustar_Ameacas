@@ -66,7 +66,7 @@ test('Bando: cada golpe vira "(fórmula) * N" e o total do bando bate com a tabe
   assert.ok(Math.abs(total - r.plano.linha.Dano) / r.plano.linha.Dano < 0.1, `${total} vs ${r.plano.linha.Dano}`);
 });
 
-test('Bando cria os três poderes, acrescenta as imunidades e usa ic.custom', () => {
+test('Bando cria os três poderes e acrescenta as imunidades só ao texto (nada em ic.custom)', () => {
   const f = ficha('anao');
   const r = ajustar(f, '2', bando(), { gerarId: ids });
   assert.deepEqual(r.itensCriar.map(i => i.name), ['Dano Esmagador', 'Dano Inescapável', 'Ataques Adicionais contra o Bando']);
@@ -75,7 +75,7 @@ test('Bando cria os três poderes, acrescenta as imunidades e usa ic.custom', ()
   for (const termo of ['imunidade a manobras de combate', 'imunidade a efeitos que afetam apenas uma criatura e não causam dano', 'vulnerabilidade a dano de área']) {
     assert.match(texto, new RegExp(termo));
   }
-  assert.equal(r.update['system.tracos.ic.custom'], 'Manobras de combate, Efeitos de alvo único sem dano');
+  assert.equal('system.tracos.ic.custom' in r.update, false);
 });
 
 test('o marcador guarda a configuração do bando, o ND individual, o tamanho e as rolagens originais', () => {
@@ -195,10 +195,9 @@ test('sem Bando o resultado não traz multiplicador', () => {
   assert.equal('system.tracos.tamanho' in r.update, false);
 });
 
-test('Bando junto com Enxame: ic.custom não repete rótulos que os dois templates trazem', () => {
+test('Bando junto com Enxame: o texto não repete a imunidade que os dois templates trazem, e ic.custom não é tocado', () => {
   const r = ajustar(ficha('anao'), '2', { ...bando('10-20', 2), enxame: true });
-  assert.equal(r.update['system.tracos.ic.custom'],
-    'Acertos críticos, Dano de precisão, Flanqueamento, Manobras de combate, Efeitos de alvo único sem dano');
+  assert.equal('system.tracos.ic.custom' in r.update, false);
   const texto = r.update['system.detalhes.resistencias'];
   assert.equal((texto.match(/imunidade a manobras de combate/g) ?? []).length, 1);
 });

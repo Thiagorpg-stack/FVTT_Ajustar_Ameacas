@@ -1,7 +1,7 @@
 // Templates de ameaça (Chefe Final, Enxame e Bando). Sem dependência do Foundry.
 //
 // O módulo guarda no ator um marcador com o estado ORIGINAL (PM, RD, texto de resistências; para o Enxame
-// também as armas inteiras, a linha de ataque e o ic.custom; para o Bando o tamanho e as rolagens) e marca
+// também as armas inteiras, a linha de ataque; para o Bando o tamanho e as rolagens) e marca
 // com uma flag os itens que cria. Assim o ajuste é repetível: antes de aplicar de novo, tudo volta ao estado base, e
 // desmarcar um template devolve a ficha como estava.
 import { valorND } from './tabelas.js';
@@ -30,7 +30,9 @@ const IMUNIDADES_ENXAME = [
   'imunidade a flanqueamento',
   'imunidade a manobras de combate (Agarrar, Derrubar, Desarmar, Quebrar, Empurrar)',
 ];
-// Nenhuma dessas imunidades é uma condição fixa do sistema (tracos.ic.value); vão no texto livre ic.custom.
+// Nenhuma dessas imunidades é uma condição fixa do sistema (tracos.ic.value). Até a 0.11.0 elas iam também em rótulos para
+// tracos.ic.custom e a ficha as mostrava duas vezes; agora só o texto de resistências as guarda. Os rótulos ficam aqui só para
+// limpar o ic.custom das fichas antigas.
 const ROTULOS_IC_ENXAME = ['Acertos críticos', 'Dano de precisão', 'Flanqueamento', 'Manobras de combate'];
 
 const PODERES_BANDO = [
@@ -44,6 +46,7 @@ const TERMOS_BANDO = [
   'vulnerabilidade a dano de área',
 ];
 const ROTULOS_IC_BANDO = ['Manobras de combate', 'Efeitos de alvo único sem dano'];
+const ROTULOS_IC_LEGADOS = [...ROTULOS_IC_ENXAME, ...ROTULOS_IC_BANDO];
 
 const ORDEM_ND = ['1/4', '1/2', ...Array.from({ length: 20 }, (_, i) => String(i + 1)), 'S', 'S+'];
 const ORDEM_PATAMARES = ['Iniciante', 'Veterano', 'Campeão', 'Lenda'];
@@ -138,15 +141,6 @@ function textoComTermos(texto, termos) {
   return texto ? `${texto}, ${faltando.join(', ')}` : faltando.join(', ');
 }
 
-function mesclarRotulos(existente, novos) {
-  const atuais = existente.split(/[;,]/).map(s => s.trim()).filter(Boolean);
-  const todos = [...atuais];
-  for (const n of novos) {
-    if (!todos.some(a => a.toLowerCase() === n.toLowerCase())) todos.push(n);
-  }
-  return todos.join(', ');
-}
-
 // Aplica a um item uma mudança no formato de itemUpdates ({ _id, 'system.rolls': ... }).
 export function aplicarMudancas(item, mudanca) {
   for (const [caminho, valor] of Object.entries(mudanca)) {
@@ -234,10 +228,13 @@ export function aplicarTemplates({ dados, nd, ativos = {}, bando = null, danoND,
   if (marcador || texto !== (sys.detalhes.resistencias ?? '')) update['system.detalhes.resistencias'] = texto;
   if (chefe && rd !== rdAtual(rdDados)) linhas.push({ rotulo: 'RD', antes: rdAtual(rdDados), depois: rd });
 
-  const rotulosIC = [...(enxame ? ROTULOS_IC_ENXAME : []), ...(bando ? ROTULOS_IC_BANDO : [])];
+  // Ficha criada até a 0.11.0: o ic.custom ainda tem os rótulos antigos, que repetiam o texto. Volta ao que era; um ic.custom
+  // que o mestre escreveu depois (sem esses rótulos) não é tocado.
   const tinhaIC = marcador?.ativos?.some(a => a === 'enxame' || a === 'bando');
-  if (rotulosIC.length) update['system.tracos.ic.custom'] = mesclarRotulos(base.icCustom, rotulosIC);
-  else if (tinhaIC && marcador.base?.icCustom !== undefined) update['system.tracos.ic.custom'] = marcador.base.icCustom;
+  const icAtual = sys.tracos.ic?.custom ?? '';
+  if (tinhaIC && marcador.base?.icCustom !== undefined && ROTULOS_IC_LEGADOS.some(r => icAtual.includes(r))) {
+    update['system.tracos.ic.custom'] = marcador.base.icCustom;
+  }
 
   if (bando) {
     linhas.push({ rotulo: 'ND do bando', antes: bando.ndIndividual, depois: bando.ndEfetivo });
